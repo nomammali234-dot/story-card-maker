@@ -1,0 +1,45 @@
+:root { --pg:#0e1118; --panel:#161a24; --field:#1d2230; --line:#2a3042; --ink:#e9ecf5; --muted:#98a1b8; --accent:#5b86ff; color-scheme: dark; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--pg); color: var(--ink); font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; line-height: 1.5; }
+header { padding: 28px 24px 8px; max-width: 1100px; margin: 0 auto; }
+h1 { margin: 0; font-family: Bahnschrift, "Segoe UI", system-ui, sans-serif; font-size: 2rem; letter-spacing: -.01em; }
+header p { margin: 4px 0 0; color: var(--muted); }
+.app { max-width: 1100px; margin: 0 auto; padding: 20px 24px 64px; display: grid; grid-template-columns: minmax(0, 400px) 1fr; gap: 28px; align-items: start; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px 20px; }
+.tabs { display: flex; gap: 4px; margin: 0 -8px 16px; border-bottom: 1px solid var(--line); }
+.tabs button { background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); padding: 8px 12px; font-weight: 600; border-radius: 0; }
+.tabs button[aria-selected=true] { color: var(--ink); border-bottom-color: var(--accent); }
+.fields { display: grid; gap: 16px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+label { display: block; margin-bottom: 5px; font-size: .88rem; font-weight: 600; }
+label output { float: right; font-weight: 400; color: var(--muted); }
+input[type=text], select, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; }
+textarea { min-height: 170px; resize: vertical; line-height: 1.45; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+input[type=color] { width: 100%; height: 38px; padding: 2px; background: var(--field); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+input[type=file] { width: 100%; color: var(--muted); font-size: .9rem; }
+.help { margin: 5px 0 0; font-size: .82rem; color: var(--muted); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button { font: inherit; font-weight: 600; cursor: pointer; border-radius: 6px; padding: 10px 16px; border: 1px solid var(--accent); background: var(--accent); color: #0b1020; }
+button.ghost { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 400; padding: 8px 12px; }
+.fields button.ghost { margin-top: 6px; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.stage { position: sticky; top: 16px; display: grid; justify-items: center; gap: 14px; }
+.bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.status { margin: 0; font-size: .85rem; color: var(--muted); text-align: center; }
+.warn { color: #ffcf6b; }
+
+/* Card: yahi PNG ban kar download hota hai */
+.card { width: 360px; max-width: 100%; padding: 22px 20px; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; gap: 16px; background: var(--bg); color: var(--text); }
+.card.r916 { aspect-ratio: 9 / 16; } .card.r45 { aspect-ratio: 4 / 5; } .card.r11 { aspect-ratio: 1 / 1; }
+.head { display: flex; align-items: center; gap: 12px; }
+.avatar { flex: none; width: 50px; height: 50px; border-radius: 50%; background: var(--hl) center / cover no-repeat; color: #1b1b1b; display: grid; place-items: center; font-weight: 700; font-size: 1.2rem; }
+.name { font-weight: 700; line-height: 1.2; }
+.sub { opacity: .75; line-height: 1.3; }
+.mid { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+.story { background: var(--box); border-radius: 14px; padding: 16px 16px 18px; line-height: 1.5; }
+.story mark { background: none; color: var(--hl); font-weight: 700; }
+.foot { text-align: center; font-weight: 700; font-size: 12.5px; opacity: .92; }
+
+@media (max-width: 860px) { .app { grid-template-columns: 1fr; } .stage { position: static; order: -1; } }

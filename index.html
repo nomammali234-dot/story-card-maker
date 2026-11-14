@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story Maker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lora:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@500;700&family=Poppins:wght@400;600&family=Roboto+Slab:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>Story Maker</h1>
+  <p>Kahani likhein, template chunein, aur card ko PNG bana kar download karein.</p>
+</header>
+
+<div class="app">
+  <section class="panel" aria-label="Card ki setting">
+    <div class="tabs" role="tablist" aria-label="Setting ke hisse">
+      <button role="tab" id="t-profile" aria-controls="p-profile" aria-selected="true">Profile</button>
+      <button role="tab" id="t-text" aria-controls="p-text" aria-selected="false" tabindex="-1">Text</button>
+      <button role="tab" id="t-image" aria-controls="p-image" aria-selected="false" tabindex="-1">Image</button>
+      <button role="tab" id="t-size" aria-controls="p-size" aria-selected="false" tabindex="-1">Size</button>
+    </div>
+
+    <div role="tabpanel" id="p-profile" aria-labelledby="t-profile" class="fields">
+      <div><label for="tpl">Template</label><select id="tpl" data-k="tpl"></select></div>
+      <div><label for="photoIn">Profile tasveer</label><input type="file" id="photoIn" accept="image/*">
+        <button type="button" class="ghost" id="photoRm" hidden>Tasveer hataayen</button></div>
+      <div><label for="name">Naam / Title</label><input type="text" id="name" data-k="name" maxlength="40"></div>
+      <div><label for="sub">Subtitle</label><input type="text" id="sub" data-k="sub" maxlength="50"></div>
+      <div class="row">
+        <div><label for="nFont">Naam ka font</label><select id="nFont" data-k="nFont"></select></div>
+        <div><label for="nSize">Size <output id="nOut"></output></label><input type="range" id="nSize" data-k="nSize" data-num min="12" max="30"></div>
+      </div>
+    </div>
+
+    <div role="tabpanel" id="p-text" aria-labelledby="t-text" class="fields" hidden>
+      <div><label for="text">Matan</label><textarea id="text" data-k="text"></textarea>
+        <p class="help">Lafz ko numaya karne ke liye usay <b>**dohre star**</b> ke andar likhein.</p></div>
+      <div class="row">
+        <div><label for="tFont">Kahani ka font</label><select id="tFont" data-k="tFont"></select></div>
+        <div><label for="tSize">Size <output id="tOut"></output></label><input type="range" id="tSize" data-k="tSize" data-num min="11" max="26"></div>
+      </div>
+      <div class="row">
+        <div><label for="align">Matan ki jagah</label>
+          <select id="align" data-k="align"><option value="left">Bayen</option><option value="center">Beech mein</option><option value="right">Dayen</option></select></div>
+        <div><label for="hl">Numaya rang</label><input type="color" id="hl" data-k="hl">
+          <button type="button" class="ghost" id="hlRm">Template ka rang</button></div>
+      </div>
+      <div><label for="foot">Aakhri line</label><input type="text" id="foot" data-k="foot" maxlength="60">
+        <p class="help">Khali chhorein to nazar nahi aayegi.</p></div>
+    </div>
+
+    <div role="tabpanel" id="p-image" aria-labelledby="t-image" class="fields" hidden>
+      <div><label for="bgIn">Peeche ki tasveer</label><input type="file" id="bgIn" accept="image/*">
+        <button type="button" class="ghost" id="bgRm" hidden>Tasveer hataayen</button></div>
+      <div><label for="dim">Andhera <output id="dOut"></output></label><input type="range" id="dim" data-k="dim" data-num min="0" max="85">
+        <p class="help">Andhera barhane se matan saaf parha jata hai.</p></div>
+    </div>
+
+    <div role="tabpanel" id="p-size" aria-labelledby="t-size" class="fields" hidden>
+      <div><label for="ratio">Card ka size</label>
+        <select id="ratio" data-k="ratio"><option value="r916">Story (9:16)</option><option value="r45">Post (4:5)</option><option value="r11">Square (1:1)</option><option value="auto">Matan ke hisab se</option></select></div>
+      <div><label for="exportW">Download ki chorai</label>
+        <select id="exportW" data-k="exportW" data-num><option value="1080">1080 pixel</option><option value="2160">2160 pixel (bari)</option></select></div>
+      <div><button type="button" class="ghost" id="reset">Naya card (sab saaf)</button></div>
+    </div>
+  </section>
+
+  <section class="stage" aria-label="Preview">
+    <div class="card" id="card">
+      <div class="head"><div class="avatar" id="av"></div><div><div class="name" id="cName"></div><div class="sub" id="cSub"></div></div></div>
+      <div class="mid"><div class="story" id="cStory"></div></div>
+      <div class="foot" id="cFoot"></div>
+    </div>
+    <div class="bar">
+      <button type="button" class="ghost" id="undo" title="Ctrl+Z">Wapas</button>
+      <button type="button" class="ghost" id="redo" title="Ctrl+Y">Aage</button>
+      <button type="button" id="dl">PNG download</button>
+      <button type="button" class="ghost" id="copy">Image copy</button>
+    </div>
+    <p class="status"><span id="saved"></span> <span class="warn" id="warn" hidden>Matan card se bahar ja raha hai. Size chhota karein ya card ka size badlein.</span></p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
