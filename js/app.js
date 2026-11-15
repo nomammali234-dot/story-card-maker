@@ -359,8 +359,8 @@ $("nextSlide").onclick = () => {
 };
 
 $("addSlide").onclick = () => {
-  if (state.slides.length >= 10) {
-    $("saved").textContent = "Carousel mein zyada se zyada 10 slides ho sakti hain.";
+  if (state.slides.length >= 20) {
+    $("saved").textContent = "Carousel mein zyada se zyada 20 slides ho sakti hain.";
     return;
   }
   saveActiveSlide();
@@ -375,6 +375,180 @@ $("removeSlide").onclick = () => {
   const index = Math.min(state.activeSlide, state.slides.length - 1);
   activateSlide(index, true, false);
 };
+
+function distributeItems(items, count) {
+  const groups = [];
+  let start = 0;
+  for (let i = 0; i < count; i++) {
+    const size = Math.floor(items.length / count) + (i < items.length % count ? 1 : 0);
+    groups.push(items.slice(start, start + size).join("\n\n"));
+    start += size;
+  }
+  return groups;
+}
+
+function makeSlidesFromText(text, count) {
+  const posts = parseNumberedPosts(text, false);
+  let items;
+  if (posts.length) {
+    if (count > posts.length) {
+      throw new Error(`Text mein ${posts.length} numbered posts hain. ${posts.length} ya us se kam slides chunein.`);
+    }
+    items = posts.map(post =>
+      `**${post.number}. ${post.title}**\n${post.body}${post.hashtags ? `\n\n${post.hashtags}` : ""}`
+    );
+  } else {
+    items = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+    if (items.length < count) {
+      const words = text.trim().split(/\s+/);
+      if (words.length < count) {
+        throw new Error(`Itne lafz nahi hain. Zyada se zyada ${words.length} slides chunein.`);
+      }
+      items = [];
+      let start = 0;
+      for (let i = 0; i < count; i++) {
+        const size = Math.floor(words.length / count) + (i < words.length % count ? 1 : 0);
+        items.push(words.slice(start, start + size).join(" "));
+        start += size;
+      }
+      return items;
+    }
+  }
+  return distributeItems(items, count);
+}
+
+let pendingBulkSlides = null;
+
+$("generateSlides").onclick = () => {
+  const text = $("bulkText").value.trim();
+  if (!text) {
+    $("saved").textContent = "Pehle bulk text paste karein.";
+    return;
+  }
+  const slideCount = Number($("slidesWanted").value);
+  if (!Number.isInteger(slideCount) || slideCount < 1 || slideCount > 20) {
+    $("saved").textContent = "Slides ki tadaad 1 se 20 ke darmiyan rakhein.";
+    return;
+  }
+
+  let contents;
+  try {
+    contents = makeSlidesFromText(text, slideCount);
+  } catch (e) {
+    $("saved").textContent = e.message;
+    return;
+  }
+  pendingBulkSlides = contents;
+  $("bulkConfirmMessage").textContent = `${contents.length} slides banengi aur mojooda carousel replace hoga. Continue karein?`;
+  $("bulkConfirm").hidden = false;
+  $("saved").textContent = "";
+};
+
+function applyBulkSlides(contents) {
+  clearTimeout(timer);
+  saveActiveSlide();
+  state.slides = contents.map((content, index) => ({
+    name: `Slide ${index + 1}`,
+    sub: "",
+    text: content,
+    foot: index === contents.length - 1 ? state.foot : ""
+  }));
+  state.activeSlide = 0;
+  Object.assign(state, state.slides[0]);
+  syncControls();
+  render();
+  snapshot();
+  save();
+  $("saved").textContent = `${contents.length} slides tayyar hain. Har slide check karein.`;
+}
+
+$("confirmGenerateSlides").onclick = () => {
+  if (!pendingBulkSlides) return;
+  const contents = pendingBulkSlides;
+  pendingBulkSlides = null;
+  $("bulkConfirm").hidden = true;
+  applyBulkSlides(contents);
+};
+
+$("cancelGenerateSlides").onclick = () => {
+  pendingBulkSlides = null;
+  $("bulkConfirm").hidden = true;
+};
+
+function parseNumberedPosts(text, required = true) {
+  const heading = /^[ \t]*\*{0,2}[ \t]*(\d+)\.[ \t]*(.*?)[ \t]*\*{0,2}[ \t]*$/gm;
+  const matches = [...text.matchAll(heading)];
+  if (!matches.length) {
+    if (!required) return [];
+    throw new Error("Har post ke title ko **1. Title** format mein likhein.");
+  }
+  if (matches.length > 50) {
+    throw new Error("Ek ZIP mein zyada se zyada 50 posts export karein.");
+  }
+
+  return matches.map((match, index) => {
+    const start = match.index + match[0].length;
+    const end = index + 1 < matches.length ? matches[index + 1].index : text.length;
+    const lines = text.slice(start, end).trim().split(/\r?\n/);
+    const hashtags = lines.filter(line => /^\s*#[\w#\s]+\s*$/.test(line)).join(" ").trim();
+    const body = lines.filter(line => !/^\s*#[\w#\s]+\s*$/.test(line)).join("\n").trim();
+    const title = match[2].trim();
+    if (!title || !body) {
+      throw new Error(`Post ${match[1]} mein title ya message missing hai.`);
+    }
+    return { number: Number(match[1]), title, body, hashtags };
+  });
+}
+
+function postFileName(post, index) {
+  const slug = post.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `${String(index + 1).padStart(2, "0")}-${slug || "post"}.png`;
+}
+
+async function exportPostCards(posts) {
+  if (!window.html2canvas) throw new Error("Image export ke liye internet connection check karein.");
+  if (!window.JSZip) throw new Error("ZIP banane ke liye internet connection check karein.");
+
+  const originalState = { ...state };
+  const zip = new JSZip();
+  try {
+    for (let i = 0; i < posts.length; i++) {
+      const post = posts[i];
+      state = { ...originalState, name: post.title, sub: "", text: post.body, foot: post.hashtags };
+      render();
+      const canvas = await makeCanvas();
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      canvas.width = 0;
+      canvas.height = 0;
+      if (!blob) throw new Error(`Post ${post.number} ki image export nahi hui.`);
+      zip.file(postFileName(post, i), blob);
+    }
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeExportName()}-posts.zip`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  } finally {
+    state = originalState;
+    syncControls();
+    render();
+  }
+}
+
+$("downloadPosts").onclick = () => busy($("downloadPosts"), "Posts ban rahe hain...", async () => {
+  const posts = parseNumberedPosts($("bulkText").value);
+  await exportPostCards(posts);
+  $("saved").textContent = `${posts.length} post images ZIP mein download ho gayi.`;
+});
+
+["bulkText", "slidesWanted"].forEach(id => $(id).addEventListener("input", () => {
+  if (!pendingBulkSlides) return;
+  pendingBulkSlides = null;
+  $("bulkConfirm").hidden = true;
+}));
 
 const tabs = [...document.querySelectorAll("[role=tab]")];
 function openTab(tab) {

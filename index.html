@@ -114,6 +114,23 @@
 
     <div role="tabpanel" id="p-carousel" aria-labelledby="t-carousel" class="fields" hidden>
       <p class="help">Har slide ka title aur matan Profile aur Text tabs mein edit karein. Design settings sab slides par apply hoti hain.</p>
+      <div>
+        <label for="bulkText">Bulk text se slides banayein</label>
+        <textarea id="bulkText" placeholder="Har paragraph ke darmiyan ek khali line chhorein."></textarea>
+        <p class="help">Carousel slides ke liye paragraphs use karein. Alag post images ke liye **1. Title** se numbered entries paste karein; har post ka text aur hashtags usi image par aayenge.</p>
+      </div>
+      <div><label for="slidesWanted">Kitni slides banani hain?</label>
+        <input type="number" id="slidesWanted" min="1" max="20" step="1" value="10"></div>
+      <p class="help">Numbered posts barabar group honge. Misal: 20 posts aur 10 slides se 2 posts per slide; 20 slides se 1 post per slide.</p>
+      <button type="button" id="generateSlides">Text se slides banayein</button>
+      <button type="button" class="ghost" id="downloadPosts">Numbered posts ke images ZIP download karein</button>
+      <div id="bulkConfirm" class="confirm-box" hidden>
+        <p id="bulkConfirmMessage" class="help"></p>
+        <div class="inline-buttons">
+          <button type="button" id="confirmGenerateSlides">Continue</button>
+          <button type="button" class="ghost" id="cancelGenerateSlides">Cancel</button>
+        </div>
+      </div>
       <div class="slide-nav">
         <button type="button" class="ghost" id="prevSlide">Pichla</button>
         <strong id="slideCount" aria-live="polite"></strong>
