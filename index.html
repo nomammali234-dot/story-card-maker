@@ -20,6 +20,7 @@
       <button role="tab" id="t-text" aria-controls="p-text" aria-selected="false" tabindex="-1">Text</button>
       <button role="tab" id="t-image" aria-controls="p-image" aria-selected="false" tabindex="-1">Image</button>
       <button role="tab" id="t-size" aria-controls="p-size" aria-selected="false" tabindex="-1">Size</button>
+      <button role="tab" id="t-carousel" aria-controls="p-carousel" aria-selected="false" tabindex="-1">Carousel</button>
     </div>
 
     <div role="tabpanel" id="p-profile" aria-labelledby="t-profile" class="fields">
@@ -35,6 +36,17 @@
     </div>
 
     <div role="tabpanel" id="p-text" aria-labelledby="t-text" class="fields" hidden>
+      <div class="row">
+        <div><label for="preset">Story preset</label>
+          <select id="preset">
+            <option value="">Choose a preset</option>
+            <option value="motivation">Motivation</option>
+            <option value="travel">Travel</option>
+            <option value="friendship">Friendship</option>
+            <option value="quote">Short quote</option>
+          </select></div>
+        <div class="align-end"><button type="button" class="ghost" id="applyPreset">Use preset</button></div>
+      </div>
       <div><label for="text">Matan</label><textarea id="text" data-k="text"></textarea>
         <p class="help">Lafz ko numaya karne ke liye usay <b>**dohre star**</b> ke andar likhein.</p></div>
       <div class="row">
@@ -47,6 +59,22 @@
         <div><label for="hl">Numaya rang</label><input type="color" id="hl" data-k="hl">
           <button type="button" class="ghost" id="hlRm">Template ka rang</button></div>
       </div>
+      <div class="row">
+        <div><label class="checkbox"><input type="checkbox" id="uppercase" data-k="uppercase"> Uppercase</label></div>
+        <div><label class="checkbox"><input type="checkbox" id="textShadow" data-k="textShadow"> Text shadow</label></div>
+      </div>
+      <div class="row">
+        <div><label class="checkbox"><input type="checkbox" id="outline" data-k="outline"> Text outline</label></div>
+        <div></div>
+      </div>
+      <div class="row">
+        <div><label for="textColor">Text color</label><input type="color" id="textColor" data-k="textColor">
+          <button type="button" class="ghost" id="textColorRm">Template ka rang</button></div>
+        <div><label for="lineHeight">Line spacing <output id="lineHeightOut"></output></label>
+          <input type="range" id="lineHeight" data-k="lineHeight" data-num min="1.1" max="2.2" step="0.1"></div>
+      </div>
+      <div><label for="letterSpacing">Letter spacing <output id="letterSpacingOut"></output></label>
+        <input type="range" id="letterSpacing" data-k="letterSpacing" data-num min="0" max="3" step="0.1"></div>
       <div><label for="foot">Aakhri line</label><input type="text" id="foot" data-k="foot" maxlength="60">
         <p class="help">Khali chhorein to nazar nahi aayegi.</p></div>
     </div>
@@ -54,21 +82,55 @@
     <div role="tabpanel" id="p-image" aria-labelledby="t-image" class="fields" hidden>
       <div><label for="bgIn">Peeche ki tasveer</label><input type="file" id="bgIn" accept="image/*">
         <button type="button" class="ghost" id="bgRm" hidden>Tasveer hataayen</button></div>
+      <div><label for="logoIn">Watermark / Logo</label><input type="file" id="logoIn" accept="image/*">
+        <button type="button" class="ghost" id="logoRm" hidden>Logo hataayen</button></div>
+      <div><label for="watermarkText">Watermark text</label><input type="text" id="watermarkText" data-k="watermarkText" maxlength="24"></div>
+      <label class="checkbox"><input type="checkbox" id="watermark" data-k="watermark"> Watermark dikhayein</label>
       <div><label for="dim">Andhera <output id="dOut"></output></label><input type="range" id="dim" data-k="dim" data-num min="0" max="85">
         <p class="help">Andhera barhane se matan saaf parha jata hai.</p></div>
     </div>
 
     <div role="tabpanel" id="p-size" aria-labelledby="t-size" class="fields" hidden>
       <div><label for="ratio">Card ka size</label>
-        <select id="ratio" data-k="ratio"><option value="r916">Story (9:16)</option><option value="r45">Post (4:5)</option><option value="r11">Square (1:1)</option><option value="auto">Matan ke hisab se</option></select></div>
+        <select id="ratio" data-k="ratio"><option value="r916">Story (9:16)</option><option value="r45">Post (4:5)</option><option value="r34">Mini Post (3:4)</option><option value="r11">Square (1:1)</option><option value="r169">Banner (16:9)</option><option value="auto">Matan ke hisab se</option></select></div>
       <div><label for="exportW">Download ki chorai</label>
-        <select id="exportW" data-k="exportW" data-num><option value="1080">1080 pixel</option><option value="2160">2160 pixel (bari)</option></select></div>
+        <select id="exportW" data-k="exportW" data-num><option value="720">720 pixel</option><option value="1080">1080 pixel</option><option value="1440">1440 pixel</option><option value="2160">2160 pixel (bari)</option></select></div>
+      <div><label for="exportName">Download file name</label><input type="text" id="exportName" data-k="exportName" maxlength="50"></div>
+      <div><label for="jpgQuality">JPG quality <output id="jpgQualityOut"></output></label>
+        <input type="range" id="jpgQuality" data-k="jpgQuality" data-num min="50" max="100"></div>
+      <div><label for="designName">Design ka naam</label><input type="text" id="designName" data-k="designName" maxlength="30"></div>
+      <div class="inline-buttons">
+        <button type="button" id="saveDesign">Save design</button>
+        <button type="button" class="ghost" id="loadDesign">Load</button>
+      </div>
+      <div><label for="savedDesigns">Saved designs</label><select id="savedDesigns"></select></div>
+      <div><label for="renameName">Rename selected design to</label><input type="text" id="renameName" maxlength="30"></div>
+      <div class="inline-buttons">
+        <button type="button" class="ghost" id="renameDesign">Rename selected</button>
+        <button type="button" class="ghost" id="deleteDesign">Delete selected</button>
+      </div>
       <div><button type="button" class="ghost" id="reset">Naya card (sab saaf)</button></div>
+    </div>
+
+    <div role="tabpanel" id="p-carousel" aria-labelledby="t-carousel" class="fields" hidden>
+      <p class="help">Har slide ka title aur matan Profile aur Text tabs mein edit karein. Design settings sab slides par apply hoti hain.</p>
+      <div class="slide-nav">
+        <button type="button" class="ghost" id="prevSlide">Pichla</button>
+        <strong id="slideCount" aria-live="polite"></strong>
+        <button type="button" class="ghost" id="nextSlide">Agla</button>
+      </div>
+      <div class="inline-buttons">
+        <button type="button" id="addSlide">Slide add karein</button>
+        <button type="button" class="ghost" id="removeSlide">Slide hataayen</button>
+      </div>
+      <button type="button" id="downloadCarousel">Carousel ZIP download</button>
+      <p class="help">ZIP file mein har slide alag PNG image hogi.</p>
     </div>
   </section>
 
   <section class="stage" aria-label="Preview">
     <div class="card" id="card">
+      <div class="watermark" id="cardWatermark" aria-hidden="true"></div>
       <div class="head"><div class="avatar" id="av"></div><div><div class="name" id="cName"></div><div class="sub" id="cSub"></div></div></div>
       <div class="mid"><div class="story" id="cStory"></div></div>
       <div class="foot" id="cFoot"></div>
@@ -77,6 +139,7 @@
       <button type="button" class="ghost" id="undo" title="Ctrl+Z">Wapas</button>
       <button type="button" class="ghost" id="redo" title="Ctrl+Y">Aage</button>
       <button type="button" id="dl">PNG download</button>
+      <button type="button" id="dlJpg">JPG download</button>
       <button type="button" class="ghost" id="copy">Image copy</button>
     </div>
     <p class="status"><span id="saved"></span> <span class="warn" id="warn" hidden>Matan card se bahar ja raha hai. Size chhota karein ya card ka size badlein.</span></p>
@@ -84,6 +147,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

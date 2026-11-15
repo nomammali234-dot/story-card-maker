@@ -20,6 +20,11 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 input[type=color] { width: 100%; height: 38px; padding: 2px; background: var(--field); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
 input[type=file] { width: 100%; color: var(--muted); font-size: .9rem; }
 .help { margin: 5px 0 0; font-size: .82rem; color: var(--muted); }
+.checkbox { display: flex; align-items: center; gap: 8px; font-size: .9rem; color: var(--ink); }
+.checkbox input { width: auto; accent-color: var(--accent); }
+.inline-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.align-end { display: flex; align-items: end; }
+.slide-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 button { font: inherit; font-weight: 600; cursor: pointer; border-radius: 6px; padding: 10px 16px; border: 1px solid var(--accent); background: var(--accent); color: #0b1020; }
 button.ghost { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 400; padding: 8px 12px; }
@@ -30,9 +35,12 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .status { margin: 0; font-size: .85rem; color: var(--muted); text-align: center; }
 .warn { color: #ffcf6b; }
 
-/* Card: yahi PNG ban kar download hota hai */
-.card { width: 360px; max-width: 100%; padding: 22px 20px; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; gap: 16px; background: var(--bg); color: var(--text); }
-.card.r916 { aspect-ratio: 9 / 16; } .card.r45 { aspect-ratio: 4 / 5; } .card.r11 { aspect-ratio: 1 / 1; }
+/* Card: yahi PNG/JPG ban kar download hota hai */
+.card { position: relative; width: 360px; max-width: 100%; padding: 22px 20px; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; gap: 16px; background: var(--bg); color: var(--text); }
+.card.r916 { aspect-ratio: 9 / 16; } .card.r45 { aspect-ratio: 4 / 5; } .card.r34 { aspect-ratio: 3 / 4; } .card.r11 { aspect-ratio: 1 / 1; } .card.r169 { aspect-ratio: 16 / 9; }
+.watermark { position: absolute; right: 16px; bottom: 14px; z-index: 3; padding: 6px 10px; border-radius: 999px; background: rgba(9,12,18,.4); border: 1px solid rgba(255,255,255,.22); color: rgba(255,255,255,.9); letter-spacing: .08em; font-size: 10px; text-transform: uppercase; font-weight: 700; }
+.watermark.is-image { width: 54px; height: 54px; padding: 0; border-radius: 12px; background-position: center; background-repeat: no-repeat; background-size: contain; }
+.dragging { box-shadow: 0 0 0 3px rgba(91,134,255,.7); }
 .head { display: flex; align-items: center; gap: 12px; }
 .avatar { flex: none; width: 50px; height: 50px; border-radius: 50%; background: var(--hl) center / cover no-repeat; color: #1b1b1b; display: grid; place-items: center; font-weight: 700; font-size: 1.2rem; }
 .name { font-weight: 700; line-height: 1.2; }
