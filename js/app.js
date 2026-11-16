@@ -42,12 +42,19 @@ const DEFAULT = {
   textColor: "", lineHeight: 1.5, letterSpacing: 0,
   watermark: false, watermarkText: "Story Maker", logo: "", designName: "My story",
   exportName: "story-card", jpgQuality: 92,
+  customGradient: false, gradientStart: "#243b55", gradientEnd: "#141e30", gradientAngle: 135,
+  bgBrightness: 100, bgSaturation: 100, bgBlur: 0, bgPositionX: 50, bgPositionY: 50,
+  stickers: [],
 };
 const KEY = "story-maker-v1";
 const DESIGN_KEY = "story-maker-designs-v1";
+const SCHEDULE_KEY = "story-maker-schedule-v1";
+const BACKGROUND_KEY = "story-maker-backgrounds-v1";
 const slideFields = ["name", "sub", "text", "foot"];
 let state = { ...DEFAULT, activeSlide: 0, slides: [{ name: DEFAULT.name, sub: DEFAULT.sub, text: DEFAULT.text, foot: DEFAULT.foot }] }, IMG = {};
 let hist = [], at = -1, timer = null;
+let selectedStickerId = "";
+let stickerDrag = null;
 
 const fill = (sel, items) => Object.keys(items).forEach(k => sel.add(new Option(k, k)));
 fill($("tpl"), TEMPLATES); fill($("nFont"), FONTS); fill($("tFont"), FONTS);
@@ -75,12 +82,19 @@ function render() {
   card.style.setProperty("--text", t.text);
   card.style.setProperty("--hl", hl);
   card.className = "card " + (state.ratio === "auto" ? "" : state.ratio);
-
-  if (state.bg) {
-    const d = state.dim / 100;
-    card.style.background = `linear-gradient(rgba(0,0,0,${d}),rgba(0,0,0,${d})), url(${IMG[state.bg]}) center / cover no-repeat`;
+  card.style.background = state.customGradient
+    ? `linear-gradient(${state.gradientAngle}deg, ${state.gradientStart}, ${state.gradientEnd})`
+    : t.bg;
+  const background = $("cardBackground");
+  if (state.bg && IMG[state.bg]) {
+    const dim = state.dim / 100;
+    background.hidden = false;
+    background.style.backgroundImage = `linear-gradient(rgba(0,0,0,${dim}),rgba(0,0,0,${dim})), url("${IMG[state.bg]}")`;
+    background.style.backgroundPosition = `${state.bgPositionX}% ${state.bgPositionY}%`;
+    background.style.filter = `brightness(${state.bgBrightness / 100}) saturate(${state.bgSaturation / 100}) blur(${state.bgBlur}px)`;
   } else {
-    card.style.background = "";
+    background.hidden = true;
+    background.style.backgroundImage = "none";
   }
 
   $("cName").textContent = state.name;
@@ -95,6 +109,7 @@ function render() {
 
   $("cFoot").textContent = state.foot;
   $("cFoot").hidden = !state.foot.trim();
+  renderStickers();
 
   const watermark = $("cardWatermark");
   if (state.watermark && (state.watermarkText.trim() || state.logo)) {
@@ -125,11 +140,49 @@ function render() {
   $("lineHeightOut").textContent = Number(state.lineHeight).toFixed(1);
   $("letterSpacingOut").textContent = Number(state.letterSpacing).toFixed(1) + " px";
   $("jpgQualityOut").textContent = state.jpgQuality + "%";
+  $("gradientAngleOut").textContent = state.gradientAngle + "°";
+  $("bgBrightnessOut").textContent = state.bgBrightness + "%";
+  $("bgSaturationOut").textContent = state.bgSaturation + "%";
+  $("bgBlurOut").textContent = state.bgBlur + " px";
+  $("bgPositionXOut").textContent = state.bgPositionX + "%";
+  $("bgPositionYOut").textContent = state.bgPositionY + "%";
   $("photoRm").hidden = !state.photo;
   $("bgRm").hidden = !state.bg;
   $("logoRm").hidden = !state.logo;
   $("warn").hidden = card.scrollHeight <= card.clientHeight + 2;
   updateSlideControls();
+}
+
+function renderStickers() {
+  const card = $("card");
+  card.querySelectorAll(".card-sticker").forEach(sticker => sticker.remove());
+  if (!Array.isArray(state.stickers)) state.stickers = [];
+  state.stickers.forEach(sticker => {
+    const element = document.createElement("span");
+    element.className = "card-sticker";
+    if (sticker.id === selectedStickerId) element.classList.add("selected");
+    element.textContent = sticker.emoji;
+    element.style.left = `${sticker.x}%`;
+    element.style.top = `${sticker.y}%`;
+    element.dataset.stickerId = sticker.id;
+    element.setAttribute("role", "button");
+    element.setAttribute("tabindex", "0");
+    element.setAttribute("aria-label", `${sticker.emoji} sticker; drag to move`);
+    element.addEventListener("keydown", e => {
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        removeSticker(sticker.id);
+      }
+    });
+    card.append(element);
+  });
+  $("removeSticker").disabled = !state.stickers.some(sticker => sticker.id === selectedStickerId);
+}
+
+function removeSticker(id) {
+  state.stickers = state.stickers.filter(sticker => sticker.id !== id);
+  selectedStickerId = "";
+  changed();
 }
 
 function syncControls() {
@@ -193,6 +246,7 @@ function normalizeSlides() {
   }
   state.activeSlide = Math.min(Math.max(0, Number(state.activeSlide) || 0), state.slides.length - 1);
   Object.assign(state, state.slides[state.activeSlide]);
+  state.stickers = Array.isArray(state.stickers) ? state.stickers.map(sticker => ({ ...sticker })) : [];
 }
 
 function updateSlideControls() {
@@ -201,6 +255,7 @@ function updateSlideControls() {
   $("prevSlide").disabled = state.activeSlide <= 0;
   $("nextSlide").disabled = state.activeSlide >= count - 1;
   $("removeSlide").disabled = count <= 1;
+  $("duplicateSlide").disabled = count >= 20;
 }
 
 function activateSlide(index, track = true, saveCurrent = true) {
@@ -305,6 +360,40 @@ $("applyPreset").onclick = () => {
   $("saved").textContent = "Story preset apply ho gaya";
 };
 
+const FONT_PAIRS = {
+  classic: { nFont: "Playfair Display", tFont: "Lora" },
+  modern: { nFont: "Poppins", tFont: "Inter" },
+  editorial: { nFont: "Merriweather", tFont: "Lora" },
+  bold: { nFont: "Roboto Slab", tFont: "Inter" }
+};
+
+$("applyFontPair").onclick = () => {
+  const pair = FONT_PAIRS[$("fontPair").value];
+  if (!pair) return;
+  Object.assign(state, pair);
+  syncControls();
+  changed();
+  $("saved").textContent = "Font pairing apply ho gayi.";
+};
+
+document.querySelectorAll("[data-sticker]").forEach(button => {
+  button.addEventListener("click", () => {
+    if (state.stickers.length >= 30) {
+      $("saved").textContent = "Ek card par zyada se zyada 30 stickers laga sakte hain.";
+      return;
+    }
+    const id = `s${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    state.stickers.push({ id, emoji: button.dataset.sticker, x: 50, y: 50 });
+    selectedStickerId = id;
+    changed();
+    $("saved").textContent = "Sticker add ho gaya. Card par drag karke jagah badlein.";
+  });
+});
+
+$("removeSticker").onclick = () => {
+  if (selectedStickerId) removeSticker(selectedStickerId);
+};
+
 function pickImage(input, key) {
   input.addEventListener("change", () => {
     const f = input.files[0];
@@ -323,6 +412,82 @@ function pickImage(input, key) {
 pickImage($("photoIn"), "photo");
 pickImage($("bgIn"), "bg");
 pickImage($("logoIn"), "logo");
+
+function readBackgroundLibrary() {
+  const raw = localStorage.getItem(BACKGROUND_KEY);
+  if (!raw) return [];
+  const items = JSON.parse(raw);
+  if (!Array.isArray(items)) throw new Error("Background library data durust nahi hai.");
+  return items;
+}
+
+function syncBackgroundLibrary() {
+  const select = $("savedBackgrounds");
+  const previous = select.value;
+  const backgrounds = readBackgroundLibrary();
+  select.replaceChildren();
+  if (!backgrounds.length) {
+    select.add(new Option("No saved backgrounds", ""));
+  } else {
+    backgrounds.forEach(item => select.add(new Option(item.name, item.id)));
+    if (backgrounds.some(item => item.id === previous)) select.value = previous;
+  }
+  $("applyBackground").disabled = backgrounds.length === 0;
+  $("deleteBackground").disabled = backgrounds.length === 0;
+}
+
+$("saveBackground").onclick = () => {
+  try {
+    if (!state.bg || !IMG[state.bg]) throw new Error("Pehle background photo upload ya apply karein.");
+    const list = readBackgroundLibrary();
+    const name = $("backgroundName").value.trim().slice(0, 30) || `Background ${list.length + 1}`;
+    const existing = list.find(item => item.name.toLowerCase() === name.toLowerCase());
+    let selectedId;
+    if (existing) {
+      existing.dataUrl = IMG[state.bg];
+      selectedId = existing.id;
+    } else {
+      const id = `background-${Date.now().toString(36)}`;
+      list.push({ id, name, dataUrl: IMG[state.bg] });
+      selectedId = id;
+    }
+    localStorage.setItem(BACKGROUND_KEY, JSON.stringify(list));
+    syncBackgroundLibrary();
+    $("savedBackgrounds").value = selectedId;
+    $("saved").textContent = `Background "${name}" library mein save ho gaya.`;
+  } catch (e) {
+    $("saved").textContent = `Background save nahi hua: ${e.message}`;
+  }
+};
+
+$("applyBackground").onclick = () => {
+  try {
+    const item = readBackgroundLibrary().find(entry => entry.id === $("savedBackgrounds").value);
+    if (!item || !item.dataUrl.startsWith("data:image/")) throw new Error("Saved background nahi mila ya file invalid hai.");
+    const id = `i${Date.now().toString(36)}`;
+    IMG[id] = item.dataUrl;
+    state.bg = id;
+    $("backgroundName").value = item.name;
+    changed();
+    $("saved").textContent = `Background "${item.name}" apply ho gaya.`;
+  } catch (e) {
+    $("saved").textContent = `Background apply nahi hua: ${e.message}`;
+  }
+};
+
+$("deleteBackground").onclick = () => {
+  try {
+    const id = $("savedBackgrounds").value;
+    const list = readBackgroundLibrary();
+    const item = list.find(entry => entry.id === id);
+    if (!item) throw new Error("Pehle saved background chunein.");
+    localStorage.setItem(BACKGROUND_KEY, JSON.stringify(list.filter(entry => entry.id !== id)));
+    syncBackgroundLibrary();
+    $("saved").textContent = `Background "${item.name}" library se delete ho gaya.`;
+  } catch (e) {
+    $("saved").textContent = `Background delete nahi hua: ${e.message}`;
+  }
+};
 
 $("photoRm").onclick = () => {
   state.photo = "";
@@ -344,7 +509,7 @@ $("logoRm").onclick = () => {
 
 $("reset").onclick = () => {
   if (confirm("Sab kuch saaf kar ke naya card shuru karein?")) {
-    state = { ...DEFAULT, activeSlide: 0, slides: [{ name: DEFAULT.name, sub: DEFAULT.sub, text: DEFAULT.text, foot: DEFAULT.foot }] };
+    state = { ...DEFAULT, stickers: [], activeSlide: 0, slides: [{ name: DEFAULT.name, sub: DEFAULT.sub, text: DEFAULT.text, foot: DEFAULT.foot }] };
     syncControls();
     changed();
   }
@@ -369,12 +534,93 @@ $("addSlide").onclick = () => {
   activateSlide(state.slides.length - 1);
 };
 
+$("duplicateSlide").onclick = () => {
+  if (state.slides.length >= 20) {
+    $("saved").textContent = "Carousel mein zyada se zyada 20 slides ho sakti hain.";
+    return;
+  }
+  saveActiveSlide();
+  const index = state.activeSlide + 1;
+  state.slides.splice(index, 0, { ...state.slides[state.activeSlide] });
+  activateSlide(index);
+  $("saved").textContent = "Slide duplicate ho gayi.";
+};
+
 $("removeSlide").onclick = () => {
   if (state.slides.length <= 1) return;
   state.slides.splice(state.activeSlide, 1);
   const index = Math.min(state.activeSlide, state.slides.length - 1);
   activateSlide(index, true, false);
 };
+
+let swipeStart = null;
+const previewCard = $("card");
+function finishSwipe(x, y, id, source) {
+  if (!swipeStart || swipeStart.id !== id || swipeStart.source !== source) return;
+  const dx = x - swipeStart.x;
+  const dy = y - swipeStart.y;
+  swipeStart = null;
+  if (Math.abs(dx) < 45 || Math.abs(dx) <= Math.abs(dy)) return;
+  if (dx < 0 && state.activeSlide < state.slides.length - 1) activateSlide(state.activeSlide + 1);
+  else if (dx > 0 && state.activeSlide > 0) activateSlide(state.activeSlide - 1);
+}
+
+previewCard.addEventListener("pointerdown", e => {
+  const stickerElement = e.target.closest(".card-sticker");
+  if (stickerElement) {
+    e.preventDefault();
+    const sticker = state.stickers.find(item => item.id === stickerElement.dataset.stickerId);
+    if (!sticker) return;
+    selectedStickerId = sticker.id;
+    previewCard.querySelectorAll(".card-sticker").forEach(item => item.classList.toggle("selected", item === stickerElement));
+    $("removeSticker").disabled = false;
+    stickerDrag = { id: e.pointerId, sticker, element: stickerElement };
+    return;
+  }
+  if (e.pointerType === "touch" || e.button !== 0 || !e.isPrimary) return;
+  swipeStart = { x: e.clientX, y: e.clientY, id: e.pointerId, source: "pointer" };
+});
+
+window.addEventListener("pointermove", e => {
+  if (!stickerDrag || stickerDrag.id !== e.pointerId) return;
+  const bounds = previewCard.getBoundingClientRect();
+  stickerDrag.sticker.x = Math.min(100, Math.max(0, ((e.clientX - bounds.left) / bounds.width) * 100));
+  stickerDrag.sticker.y = Math.min(100, Math.max(0, ((e.clientY - bounds.top) / bounds.height) * 100));
+  stickerDrag.element.style.left = `${stickerDrag.sticker.x}%`;
+  stickerDrag.element.style.top = `${stickerDrag.sticker.y}%`;
+});
+
+window.addEventListener("pointerup", e => {
+  finishSwipe(e.clientX, e.clientY, e.pointerId, "pointer");
+  if (stickerDrag && stickerDrag.id === e.pointerId) {
+    stickerDrag = null;
+    changed();
+  }
+});
+
+window.addEventListener("pointercancel", e => {
+  if (swipeStart && swipeStart.source === "pointer" && e.pointerId === swipeStart.id) swipeStart = null;
+  if (stickerDrag && stickerDrag.id === e.pointerId) stickerDrag = null;
+});
+
+previewCard.addEventListener("touchstart", e => {
+  if (e.target.closest(".card-sticker")) return;
+  const touch = e.changedTouches[0];
+  if (!touch) return;
+  swipeStart = { x: touch.clientX, y: touch.clientY, id: touch.identifier, source: "touch" };
+}, { passive: true });
+
+window.addEventListener("touchend", e => {
+  const touch = Array.from(e.changedTouches).find(item => swipeStart && item.identifier === swipeStart.id);
+  if (touch) finishSwipe(touch.clientX, touch.clientY, touch.identifier, "touch");
+}, { passive: true });
+
+window.addEventListener("touchcancel", e => {
+  if (swipeStart && swipeStart.source === "touch" &&
+      Array.from(e.changedTouches).some(item => item.identifier === swipeStart.id)) {
+    swipeStart = null;
+  }
+});
 
 function distributeItems(items, count) {
   const groups = [];
@@ -544,6 +790,148 @@ $("downloadPosts").onclick = () => busy($("downloadPosts"), "Posts ban rahe hain
   $("saved").textContent = `${posts.length} post images ZIP mein download ho gayi.`;
 });
 
+function readScheduledPosts() {
+  const raw = localStorage.getItem(SCHEDULE_KEY);
+  if (!raw) return [];
+  const items = JSON.parse(raw);
+  if (!Array.isArray(items)) throw new Error("Saved schedule data durust nahi hai.");
+  return items;
+}
+
+function renderScheduledPosts() {
+  const container = $("scheduledPosts");
+  container.replaceChildren();
+  const posts = readScheduledPosts().sort((a, b) => new Date(a.when) - new Date(b.when));
+  if (!posts.length) {
+    const empty = document.createElement("li");
+    empty.textContent = "Abhi koi post schedule nahi hui.";
+    container.append(empty);
+    return;
+  }
+
+  posts.forEach(post => {
+    const row = document.createElement("li");
+    const details = document.createElement("span");
+    const date = new Date(post.when);
+    details.textContent = `${date.toLocaleString()} · ${post.platform} · ${post.title}`;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "ghost";
+    remove.textContent = "Hataayen";
+    remove.setAttribute("aria-label", `${post.title} schedule se hataayen`);
+    remove.onclick = () => {
+      try {
+        localStorage.setItem(SCHEDULE_KEY, JSON.stringify(readScheduledPosts().filter(item => item.id !== post.id)));
+        renderScheduledPosts();
+        $("saved").textContent = "Scheduled post hata di gayi.";
+      } catch (e) {
+        $("saved").textContent = `Schedule update nahi hui: ${e.message}`;
+      }
+    };
+    row.append(details, remove);
+    container.append(row);
+  });
+}
+
+$("schedulePosts").onclick = () => {
+  try {
+    const posts = parseNumberedPosts($("bulkText").value);
+    const start = new Date($("scheduleStart").value);
+    const gapDays = Number($("scheduleGap").value);
+    if (!Number.isFinite(start.getTime()) || start <= new Date()) {
+      throw new Error("Pehli post ke liye future date aur waqt chunein.");
+    }
+    if (!Number.isInteger(gapDays) || gapDays < 1 || gapDays > 30) {
+      throw new Error("Posts ke darmiyan 1 se 30 din chunein.");
+    }
+
+    const platform = $("schedulePlatform").value;
+    const scheduled = posts.map((post, index) => {
+      const when = new Date(start);
+      when.setDate(when.getDate() + gapDays * index);
+      return {
+        id: `${Date.now().toString(36)}-${index}`,
+        title: post.title,
+        caption: `${post.title}\n\n${post.body}${post.hashtags ? `\n\n${post.hashtags}` : ""}`,
+        platform,
+        when: when.toISOString()
+      };
+    });
+    const all = [...readScheduledPosts(), ...scheduled];
+    localStorage.setItem(SCHEDULE_KEY, JSON.stringify(all));
+    renderScheduledPosts();
+    $("saved").textContent = `${scheduled.length} posts ke reminders save ho gaye.`;
+  } catch (e) {
+    $("saved").textContent = `Schedule nahi hui: ${e.message}`;
+  }
+};
+
+function escapeCalendarText(value) {
+  return value.replace(/\\/g, "\\\\").replace(/\r?\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
+}
+
+function calendarDate(date) {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function foldCalendarLine(line) {
+  const encoder = new TextEncoder();
+  const segments = [];
+  let segment = "";
+  let bytes = 0;
+  for (const character of line) {
+    const size = encoder.encode(character).length;
+    if (bytes + size > 75) {
+      segments.push(segment);
+      segment = ` ${character}`;
+      bytes = size + 1;
+    } else {
+      segment += character;
+      bytes += size;
+    }
+  }
+  segments.push(segment);
+  return segments.join("\r\n");
+}
+
+$("exportSchedule").onclick = () => {
+  try {
+    const posts = readScheduledPosts();
+    if (!posts.length) throw new Error("Pehle numbered posts schedule karein.");
+    const stamp = calendarDate(new Date());
+    const events = posts.map(post => {
+      const when = new Date(post.when);
+      if (!Number.isFinite(when.getTime())) throw new Error("Schedule mein invalid date hai.");
+      return [
+        "BEGIN:VEVENT",
+        `UID:${post.id}@story-card-maker`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART:${calendarDate(when)}`,
+        "DURATION:PT30M",
+        `SUMMARY:${escapeCalendarText(`${post.platform} post: ${post.title}`)}`,
+        `DESCRIPTION:${escapeCalendarText(post.caption)}`,
+        "BEGIN:VALARM",
+        "TRIGGER:-PT15M",
+        "ACTION:DISPLAY",
+        `DESCRIPTION:${escapeCalendarText(`Post reminder: ${post.title}`)}`,
+        "END:VALARM",
+        "END:VEVENT"
+      ].map(foldCalendarLine).join("\r\n");
+    });
+    const calendar = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Story Maker//Post Schedule//EN", "CALSCALE:GREGORIAN", ...events, "END:VCALENDAR"].join("\r\n");
+    const blob = new Blob([calendar], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "story-maker-schedule.ics";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    $("saved").textContent = "Calendar file download ho gayi.";
+  } catch (e) {
+    $("saved").textContent = `Calendar export nahi hui: ${e.message}`;
+  }
+};
+
 ["bulkText", "slidesWanted"].forEach(id => $(id).addEventListener("input", () => {
   if (!pendingBulkSlides) return;
   pendingBulkSlides = null;
@@ -633,6 +1021,89 @@ $("saveDesign").onclick = () => {
     $("saved").textContent = "Design save nahi ho saka. Browser storage ki jagah check karein.";
   }
 };
+
+function shareableState() {
+  const shared = { ...state, photo: "", bg: "", logo: "" };
+  return { version: 1, state: shared };
+}
+
+$("createShareLink").onclick = async () => {
+  try {
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(shareableState()))));
+    if (encoded.length > 8000) throw new Error("Link lamba hai. Text chhota karein ya slides kam karein.");
+    const base = /^https?:$/.test(location.protocol)
+      ? `${location.origin}${location.pathname}${location.search}`
+      : "https://nomammali234-dot.github.io/story-card-maker/";
+    const link = `${base}#design=${encoded}`;
+    $("shareLink").value = link;
+    try {
+      await navigator.clipboard.writeText(link);
+      $("saved").textContent = "Design link copy ho gaya. Images link mein shamil nahi hain.";
+    } catch (e) {
+      $("shareLink").focus();
+      $("shareLink").select();
+      $("saved").textContent = "Link ban gaya. Copy ke liye Ctrl+C dabayein.";
+    }
+  } catch (e) {
+    $("saved").textContent = `Share link nahi bana: ${e.message}`;
+  }
+};
+
+function importShareFromHash() {
+  const match = location.hash.match(/(?:^#|&)design=([^&]+)/);
+  if (!match) return false;
+  const payload = JSON.parse(decodeURIComponent(escape(atob(match[1]))));
+  if (payload.version !== 1 || !payload.state || typeof payload.state !== "object") {
+    throw new Error("Share link ka design format durust nahi hai.");
+  }
+  const incoming = payload.state;
+  const next = { ...DEFAULT };
+  Object.keys(DEFAULT).forEach(key => {
+    if (key !== "stickers" && typeof incoming[key] === typeof DEFAULT[key]) next[key] = incoming[key];
+  });
+  if (!TEMPLATES[next.tpl]) next.tpl = DEFAULT.tpl;
+  if (!FONTS[next.nFont]) next.nFont = DEFAULT.nFont;
+  if (!FONTS[next.tFont]) next.tFont = DEFAULT.tFont;
+  if (!["left", "center", "right"].includes(next.align)) next.align = DEFAULT.align;
+  if (!["r916", "r45", "r34", "r11", "r169", "auto"].includes(next.ratio)) next.ratio = DEFAULT.ratio;
+  if (!/^#[0-9a-f]{6}$/i.test(next.gradientStart)) next.gradientStart = DEFAULT.gradientStart;
+  if (!/^#[0-9a-f]{6}$/i.test(next.gradientEnd)) next.gradientEnd = DEFAULT.gradientEnd;
+  if (next.hl && !/^#[0-9a-f]{6}$/i.test(next.hl)) next.hl = "";
+  if (next.textColor && !/^#[0-9a-f]{6}$/i.test(next.textColor)) next.textColor = "";
+  const clamp = (value, min, max, fallback) => {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
+  };
+  next.nSize = clamp(next.nSize, 12, 30, DEFAULT.nSize);
+  next.tSize = clamp(next.tSize, 11, 26, DEFAULT.tSize);
+  next.exportW = [720, 1080, 1440, 2160].includes(Number(next.exportW)) ? Number(next.exportW) : DEFAULT.exportW;
+  next.gradientAngle = clamp(next.gradientAngle, 0, 360, DEFAULT.gradientAngle);
+  next.bgBrightness = clamp(next.bgBrightness, 30, 170, DEFAULT.bgBrightness);
+  next.bgSaturation = clamp(next.bgSaturation, 0, 200, 100);
+  next.bgBlur = clamp(next.bgBlur, 0, 12, 0);
+  next.bgPositionX = clamp(next.bgPositionX, 0, 100, 50);
+  next.bgPositionY = clamp(next.bgPositionY, 0, 100, 50);
+  next.dim = clamp(next.dim, 0, 85, DEFAULT.dim);
+  next.lineHeight = clamp(next.lineHeight, 1.1, 2.2, DEFAULT.lineHeight);
+  next.letterSpacing = clamp(next.letterSpacing, 0, 3, 0);
+  next.jpgQuality = clamp(next.jpgQuality, 50, 100, DEFAULT.jpgQuality);
+  next.slides = Array.isArray(incoming.slides) ? incoming.slides.slice(0, 20) : [];
+  next.activeSlide = Math.min(Number(incoming.activeSlide) || 0, Math.max(0, next.slides.length - 1));
+  next.stickers = Array.isArray(incoming.stickers) ? incoming.stickers.slice(0, 30)
+    .filter(item => item && typeof item.emoji === "string" && item.emoji.length <= 8)
+    .map((item, index) => ({
+      id: `shared-${index}`,
+      emoji: item.emoji,
+      x: Math.min(100, Math.max(0, Number(item.x) || 0)),
+      y: Math.min(100, Math.max(0, Number(item.y) || 0))
+    })) : [];
+  next.photo = "";
+  next.bg = "";
+  next.logo = "";
+  state = next;
+  normalizeSlides();
+  return true;
+}
 
 $("loadDesign").onclick = () => {
   const name = $("savedDesigns").value;
@@ -753,6 +1224,42 @@ async function exportCarousel() {
   }
 }
 
+async function exportAllSizes() {
+  if (!window.html2canvas) throw new Error("Image export ke liye internet connection check karein.");
+  if (!window.JSZip) throw new Error("ZIP banane ke liye internet connection check karein.");
+  const originalRatio = state.ratio;
+  const sizes = [
+    { ratio: "r916", name: "story-9x16" },
+    { ratio: "r45", name: "portrait-4x5" },
+    { ratio: "r34", name: "portrait-3x4" },
+    { ratio: "r11", name: "square-1x1" },
+    { ratio: "r169", name: "landscape-16x9" }
+  ];
+  const zip = new JSZip();
+  try {
+    for (const size of sizes) {
+      state.ratio = size.ratio;
+      render();
+      const canvas = await makeCanvas();
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      canvas.width = 0;
+      canvas.height = 0;
+      if (!blob) throw new Error(`${size.name} export nahi hua.`);
+      zip.file(`${safeExportName()}-${size.name}-${state.exportW}px.png`, blob);
+    }
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeExportName()}-all-sizes.zip`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  } finally {
+    state.ratio = originalRatio;
+    render();
+  }
+}
+
 async function busy(btn, label, job) {
   const old = btn.textContent;
   btn.disabled = true;
@@ -775,6 +1282,7 @@ $("dlJpg").onclick = () => busy($("dlJpg"), "Ban raha hai...", async () => {
 });
 
 $("downloadCarousel").onclick = () => busy($("downloadCarousel"), "Carousel ban raha hai...", exportCarousel);
+$("exportAllSizes").onclick = () => busy($("exportAllSizes"), "All sizes ban rahe hain...", exportAllSizes);
 
 $("copy").onclick = () => busy($("copy"), "Copy ho raha hai...", async () => {
   if (!navigator.clipboard || !window.ClipboardItem) throw new Error("Image copy sirf localhost ya https par chalta hai. PNG/JPG download istemal karein.");
@@ -819,9 +1327,27 @@ try {
   }
 } catch (e) {}
 
+let importedShare = false;
+try {
+  importedShare = importShareFromHash();
+} catch (e) {
+  $("saved").textContent = `Share link load nahi hua: ${e.message}`;
+}
+
 normalizeSlides();
 syncControls();
 syncSavedDesigns();
+try {
+  syncBackgroundLibrary();
+} catch (e) {
+  $("saved").textContent = `Background library load nahi hui: ${e.message}`;
+}
+try {
+  renderScheduledPosts();
+} catch (e) {
+  $("saved").textContent = `Saved schedule load nahi hui: ${e.message}`;
+}
 render();
 snapshot();
+if (importedShare) save();
 document.fonts.ready.then(render);

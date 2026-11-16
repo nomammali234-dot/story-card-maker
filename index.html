@@ -54,6 +54,16 @@
         <div><label for="tSize">Size <output id="tOut"></output></label><input type="range" id="tSize" data-k="tSize" data-num min="11" max="26"></div>
       </div>
       <div class="row">
+        <div><label for="fontPair">Font pairing</label>
+          <select id="fontPair">
+            <option value="classic">Classic: Playfair + Lora</option>
+            <option value="modern">Modern: Poppins + Inter</option>
+            <option value="editorial">Editorial: Merriweather + Lora</option>
+            <option value="bold">Bold: Roboto Slab + Inter</option>
+          </select></div>
+        <div class="align-end"><button type="button" class="ghost" id="applyFontPair">Apply pairing</button></div>
+      </div>
+      <div class="row">
         <div><label for="align">Matan ki jagah</label>
           <select id="align" data-k="align"><option value="left">Bayen</option><option value="center">Beech mein</option><option value="right">Dayen</option></select></div>
         <div><label for="hl">Numaya rang</label><input type="color" id="hl" data-k="hl">
@@ -77,15 +87,65 @@
         <input type="range" id="letterSpacing" data-k="letterSpacing" data-num min="0" max="3" step="0.1"></div>
       <div><label for="foot">Aakhri line</label><input type="text" id="foot" data-k="foot" maxlength="60">
         <p class="help">Khali chhorein to nazar nahi aayegi.</p></div>
+      <hr>
+      <h2 class="section-title">Stickers</h2>
+      <p class="help">Sticker add karein, phir card par drag karke jagah badlein.</p>
+      <div class="sticker-library" aria-label="Sticker library">
+        <button type="button" class="ghost" data-sticker="✨" aria-label="Add sparkle sticker">✨</button>
+        <button type="button" class="ghost" data-sticker="❤️" aria-label="Add heart sticker">❤️</button>
+        <button type="button" class="ghost" data-sticker="🌸" aria-label="Add flower sticker">🌸</button>
+        <button type="button" class="ghost" data-sticker="⭐" aria-label="Add star sticker">⭐</button>
+        <button type="button" class="ghost" data-sticker="☀️" aria-label="Add sun sticker">☀️</button>
+        <button type="button" class="ghost" data-sticker="🌿" aria-label="Add leaf sticker">🌿</button>
+        <button type="button" class="ghost" data-sticker="🔥" aria-label="Add fire sticker">🔥</button>
+        <button type="button" class="ghost" data-sticker="😊" aria-label="Add smile sticker">😊</button>
+      </div>
+      <button type="button" class="ghost" id="removeSticker" disabled>Remove selected sticker</button>
     </div>
 
     <div role="tabpanel" id="p-image" aria-labelledby="t-image" class="fields" hidden>
+      <div class="ai-tool">
+        <p class="help">AI se background banane ke liye Google AI Studio kholein, image download karein, phir neeche upload karein. Apni API key is app mein paste na karein.</p>
+        <a class="button-link" href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio kholein</a>
+      </div>
       <div><label for="bgIn">Peeche ki tasveer</label><input type="file" id="bgIn" accept="image/*">
         <button type="button" class="ghost" id="bgRm" hidden>Tasveer hataayen</button></div>
       <div><label for="logoIn">Watermark / Logo</label><input type="file" id="logoIn" accept="image/*">
         <button type="button" class="ghost" id="logoRm" hidden>Logo hataayen</button></div>
       <div><label for="watermarkText">Watermark text</label><input type="text" id="watermarkText" data-k="watermarkText" maxlength="24"></div>
       <label class="checkbox"><input type="checkbox" id="watermark" data-k="watermark"> Watermark dikhayein</label>
+      <hr>
+      <h2 class="section-title">Background library</h2>
+      <div><label for="backgroundName">Background ka naam</label><input type="text" id="backgroundName" maxlength="30" placeholder="My background"></div>
+      <button type="button" class="ghost" id="saveBackground">Current background save karein</button>
+      <div><label for="savedBackgrounds">Saved backgrounds</label><select id="savedBackgrounds"></select></div>
+      <div class="inline-buttons">
+        <button type="button" class="ghost" id="applyBackground">Apply</button>
+        <button type="button" class="ghost" id="deleteBackground">Delete</button>
+      </div>
+      <hr>
+      <h2 class="section-title">Gradient background</h2>
+      <label class="checkbox"><input type="checkbox" id="customGradient" data-k="customGradient"> Custom gradient use karein</label>
+      <div class="row">
+        <div><label for="gradientStart">Pehla rang</label><input type="color" id="gradientStart" data-k="gradientStart"></div>
+        <div><label for="gradientEnd">Doosra rang</label><input type="color" id="gradientEnd" data-k="gradientEnd"></div>
+      </div>
+      <div><label for="gradientAngle">Gradient angle <output id="gradientAngleOut"></output></label>
+        <input type="range" id="gradientAngle" data-k="gradientAngle" data-num min="0" max="360"></div>
+      <hr>
+      <h2 class="section-title">Photo filters and crop</h2>
+      <div><label for="bgBrightness">Brightness <output id="bgBrightnessOut"></output></label>
+        <input type="range" id="bgBrightness" data-k="bgBrightness" data-num min="30" max="170"></div>
+      <div><label for="bgSaturation">Saturation <output id="bgSaturationOut"></output></label>
+        <input type="range" id="bgSaturation" data-k="bgSaturation" data-num min="0" max="200"></div>
+      <div><label for="bgBlur">Blur <output id="bgBlurOut"></output></label>
+        <input type="range" id="bgBlur" data-k="bgBlur" data-num min="0" max="12"></div>
+      <div class="row">
+        <div><label for="bgPositionX">Crop left/right <output id="bgPositionXOut"></output></label>
+          <input type="range" id="bgPositionX" data-k="bgPositionX" data-num min="0" max="100"></div>
+        <div><label for="bgPositionY">Crop up/down <output id="bgPositionYOut"></output></label>
+          <input type="range" id="bgPositionY" data-k="bgPositionY" data-num min="0" max="100"></div>
+      </div>
       <div><label for="dim">Andhera <output id="dOut"></output></label><input type="range" id="dim" data-k="dim" data-num min="0" max="85">
         <p class="help">Andhera barhane se matan saaf parha jata hai.</p></div>
     </div>
@@ -103,6 +163,12 @@
         <button type="button" id="saveDesign">Save design</button>
         <button type="button" class="ghost" id="loadDesign">Load</button>
       </div>
+      <div>
+        <label for="shareLink">Shareable design link</label>
+        <input type="text" id="shareLink" readonly>
+        <p class="help">Link mein text aur settings hongi. Uploaded photos/backgrounds link mein shamil nahi honge.</p>
+      </div>
+      <button type="button" class="ghost" id="createShareLink">Create and copy link</button>
       <div><label for="savedDesigns">Saved designs</label><select id="savedDesigns"></select></div>
       <div><label for="renameName">Rename selected design to</label><input type="text" id="renameName" maxlength="30"></div>
       <div class="inline-buttons">
@@ -113,7 +179,7 @@
     </div>
 
     <div role="tabpanel" id="p-carousel" aria-labelledby="t-carousel" class="fields" hidden>
-      <p class="help">Har slide ka title aur matan Profile aur Text tabs mein edit karein. Design settings sab slides par apply hoti hain.</p>
+      <p class="help">Har slide ka title aur matan Profile aur Text tabs mein edit karein. Design settings sab slides par apply hoti hain. Mobile par preview card ko left/right swipe karein; computer par card ko left/right drag karein.</p>
       <div>
         <label for="bulkText">Bulk text se slides banayein</label>
         <textarea id="bulkText" placeholder="Har paragraph ke darmiyan ek khali line chhorein."></textarea>
@@ -131,6 +197,22 @@
           <button type="button" class="ghost" id="cancelGenerateSlides">Cancel</button>
         </div>
       </div>
+      <hr>
+      <h2 class="section-title">Numbered posts schedule karein</h2>
+      <div class="row">
+        <div><label for="schedulePlatform">Platform</label>
+          <select id="schedulePlatform"><option value="Instagram">Instagram</option><option value="Facebook">Facebook</option><option value="Both">Dono</option></select></div>
+        <div><label for="scheduleGap">Posts ke darmiyan din</label>
+          <input type="number" id="scheduleGap" min="1" max="30" value="1"></div>
+      </div>
+      <div><label for="scheduleStart">Pehli post ki date aur waqt</label>
+        <input type="datetime-local" id="scheduleStart"></div>
+      <button type="button" id="schedulePosts">Posts schedule karein</button>
+      <div class="inline-buttons">
+        <button type="button" class="ghost" id="exportSchedule">Calendar file download</button>
+      </div>
+      <p class="help">Posts chune huay interval par isi waqt schedule honge. Yeh reminders hain, auto-publish nahi. Calendar file ko apni calendar app mein import karein.</p>
+      <ul class="scheduled-list" id="scheduledPosts" aria-label="Scheduled posts"></ul>
       <div class="slide-nav">
         <button type="button" class="ghost" id="prevSlide">Pichla</button>
         <strong id="slideCount" aria-live="polite"></strong>
@@ -138,6 +220,7 @@
       </div>
       <div class="inline-buttons">
         <button type="button" id="addSlide">Slide add karein</button>
+        <button type="button" class="ghost" id="duplicateSlide">Slide duplicate karein</button>
         <button type="button" class="ghost" id="removeSlide">Slide hataayen</button>
       </div>
       <button type="button" id="downloadCarousel">Carousel ZIP download</button>
@@ -147,6 +230,7 @@
 
   <section class="stage" aria-label="Preview">
     <div class="card" id="card">
+      <div class="card-background" id="cardBackground" aria-hidden="true" hidden></div>
       <div class="watermark" id="cardWatermark" aria-hidden="true"></div>
       <div class="head"><div class="avatar" id="av"></div><div><div class="name" id="cName"></div><div class="sub" id="cSub"></div></div></div>
       <div class="mid"><div class="story" id="cStory"></div></div>
@@ -159,6 +243,7 @@
       <button type="button" id="dlJpg">JPG download</button>
       <button type="button" class="ghost" id="copy">Image copy</button>
     </div>
+    <button type="button" class="ghost" id="exportAllSizes">Export all sizes ZIP</button>
     <p class="status"><span id="saved"></span> <span class="warn" id="warn" hidden>Matan card se bahar ja raha hai. Size chhota karein ya card ka size badlein.</span></p>
   </section>
 </div>
