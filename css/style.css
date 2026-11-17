@@ -171,18 +171,23 @@ h1 {
   top: 8px;
   z-index: 20;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   margin: 0 0 20px;
   padding: 6px;
+  overflow-x: auto;
   border: 1px solid rgba(150, 169, 210, .12);
   border-radius: 12px;
   background: #0b1020;
   box-shadow: 0 8px 18px rgba(0, 0, 0, .22);
+  scrollbar-width: thin;
 }
 
+.tool-toolbar::-webkit-scrollbar { height: 5px; }
+.tool-toolbar::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(169, 157, 255, .4); }
 .tool-button {
-  flex: 1 0 88px;
+  flex: 0 0 auto;
+  min-width: 82px;
   min-height: 38px;
   padding: 7px 9px;
   border: 1px solid transparent;
@@ -192,6 +197,8 @@ h1 {
   color: var(--muted);
   font-size: .76rem;
   font-weight: 650;
+  line-height: 1.2;
+  white-space: normal;
 }
 
 .tool-button:hover { border-color: rgba(169, 157, 255, .2); }
@@ -524,6 +531,7 @@ button.ghost {
   .panel-heading { align-items: flex-start; }
   .panel-hint { max-width: 105px; font-size: .66rem; }
   .tabs button { padding: 8px 9px; font-size: .78rem; }
+  .tool-button { min-width: 76px; padding: 7px 8px; font-size: .72rem; }
   .row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .align-end button { width: 100%; }
   .card { width: min(360px, 100%); padding: 18px 16px; }
