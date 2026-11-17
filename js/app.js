@@ -1,15 +1,15 @@
 const $ = id => document.getElementById(id);
 
 const TEMPLATES = {
-  "Burgundy": { bg: "linear-gradient(165deg,#5b1818,#260909)", box: "rgba(168,52,32,.55)", text: "#fff6ee", hl: "#ffc533" },
-  "Midnight": { bg: "linear-gradient(165deg,#12254a,#080f22)", box: "rgba(60,100,190,.35)", text: "#eef3ff", hl: "#7fb0ff" },
-  "Forest": { bg: "linear-gradient(165deg,#15402a,#08190f)", box: "rgba(60,150,100,.35)", text: "#effaf2", hl: "#b6f06a" },
-  "Charcoal": { bg: "linear-gradient(165deg,#2b2b30,#111113)", box: "rgba(255,255,255,.09)", text: "#f2f2f4", hl: "#ff8a5b" },
-  "Paper": { bg: "linear-gradient(165deg,#f4ead4,#e5d6b6)", box: "rgba(255,252,242,.85)", text: "#2a2118", hl: "#b0381f" },
-  "Aurora": { bg: "linear-gradient(160deg,#1f3a73,#4d2b7a)", box: "rgba(123,216,255,.18)", text: "#f1f6ff", hl: "#84f3ff" },
-  "Sunset": { bg: "linear-gradient(150deg,#4a1d2e,#f27d5a)", box: "rgba(255,244,204,.16)", text: "#fff4f1", hl: "#ffd166" },
-  "Lavender": { bg: "linear-gradient(160deg,#403c7a,#8d5fe8)", box: "rgba(255,255,255,.14)", text: "#f9f7ff", hl: "#f8c7ff" },
-  "Ocean": { bg: "linear-gradient(160deg,#0a3d5c,#0d8ca8)", box: "rgba(210,245,255,.18)", text: "#edfaff", hl: "#84ffe6" }
+  "Burgundy": { bg: "linear-gradient(165deg,#56313a,#2a1c24)", box: "rgba(174,100,115,.34)", text: "#fbf3ef", hl: "#e1bd78" },
+  "Midnight": { bg: "linear-gradient(165deg,#26394c,#111d2a)", box: "rgba(84,127,162,.34)", text: "#f0f5f7", hl: "#8fc6d2" },
+  "Forest": { bg: "linear-gradient(165deg,#2c493d,#152921)", box: "rgba(105,151,121,.32)", text: "#f2f6ef", hl: "#c3d6a0" },
+  "Charcoal": { bg: "linear-gradient(165deg,#3b4248,#202529)", box: "rgba(255,255,255,.09)", text: "#f2f5f4", hl: "#d7ad79" },
+  "Paper": { bg: "linear-gradient(165deg,#f3eadb,#e4d7bf)", box: "rgba(255,252,242,.85)", text: "#302b25", hl: "#9a5837" },
+  "Aurora": { bg: "linear-gradient(160deg,#2c4760,#36475a)", box: "rgba(120,174,188,.2)", text: "#f2f6f7", hl: "#a6d9d3" },
+  "Sunset": { bg: "linear-gradient(150deg,#573b40,#b96e5c)", box: "rgba(255,244,226,.16)", text: "#fff7f0", hl: "#f2ce88" },
+  "Lavender": { bg: "linear-gradient(160deg,#46445e,#756684)", box: "rgba(255,255,255,.13)", text: "#fbf8ff", hl: "#e1c4d7" },
+  "Ocean": { bg: "linear-gradient(160deg,#123f4a,#287d80)", box: "rgba(210,245,245,.17)", text: "#eef9f8", hl: "#9de2d1" }
 };
 const FONTS = {
   "Merriweather": '"Merriweather", Georgia, serif', "Lora": '"Lora", Georgia, serif', "Playfair Display": '"Playfair Display", Georgia, serif',
@@ -42,7 +42,7 @@ const DEFAULT = {
   textColor: "", lineHeight: 1.5, letterSpacing: 0,
   watermark: false, watermarkText: "Story Maker", logo: "", designName: "My story",
   exportName: "story-card", jpgQuality: 92,
-  customGradient: false, gradientStart: "#243b55", gradientEnd: "#141e30", gradientAngle: 135,
+  customGradient: false, gradientStart: "#28485a", gradientEnd: "#152631", gradientAngle: 135,
   bgBrightness: 100, bgSaturation: 100, bgBlur: 0, bgPositionX: 50, bgPositionY: 50,
   stickers: [], qrText: "", layerOrder: ["profile", "story", "footer", "watermark", "qr", "stickers"], hiddenLayers: {},
 };
