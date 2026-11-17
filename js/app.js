@@ -957,32 +957,67 @@ tabs.forEach((t, i) => {
   };
 });
 
-function readSavedDesigns() {
+const GENERAL_FOLDER = "General";
+
+function readDesignStore() {
   try {
     const raw = localStorage.getItem(DESIGN_KEY);
     const parsed = raw ? JSON.parse(raw) : { designs: [] };
-    return Array.isArray(parsed.designs) ? parsed.designs : [];
+    const folders = Array.isArray(parsed.folders) ? parsed.folders
+      .filter(folder => typeof folder === "string" && folder.trim())
+      .map(folder => folder.trim().slice(0, 24)) : [];
+    const designs = Array.isArray(parsed.designs) ? parsed.designs.map(item => ({
+      ...item,
+      folder: typeof item.folder === "string" && item.folder.trim()
+        ? item.folder.trim().slice(0, 24)
+        : GENERAL_FOLDER
+    })) : [];
+    const allFolders = [...new Set([GENERAL_FOLDER, ...folders, ...designs.map(item => item.folder)])];
+    return { designs, folders: allFolders };
   } catch (e) {
-    return [];
+    return { designs: [], folders: [GENERAL_FOLDER] };
   }
 }
 
-function writeSavedDesigns(list) {
-  localStorage.setItem(DESIGN_KEY, JSON.stringify({ designs: list }));
+function readSavedDesigns() {
+  return readDesignStore().designs;
+}
+
+function writeSavedDesigns(list, folders = readDesignStore().folders) {
+  const allFolders = [...new Set([GENERAL_FOLDER, ...folders, ...list.map(item => item.folder || GENERAL_FOLDER)])];
+  localStorage.setItem(DESIGN_KEY, JSON.stringify({ designs: list, folders: allFolders }));
+}
+
+function syncDesignFolders() {
+  const { folders } = readDesignStore();
+  const filter = $("designFolderFilter");
+  const currentFilter = filter.value || "all";
+  filter.replaceChildren(new Option("All folders", "all"));
+  folders.forEach(folder => filter.add(new Option(folder, folder)));
+  filter.value = folders.includes(currentFilter) ? currentFilter : "all";
+
+  const destination = $("moveDesignFolder");
+  const currentDestination = destination.value;
+  destination.replaceChildren(...folders.map(folder => new Option(folder, folder)));
+  destination.value = folders.includes(currentDestination) ? currentDestination : GENERAL_FOLDER;
+  $("deleteDesignFolder").disabled = filter.value === "all" || filter.value === GENERAL_FOLDER;
 }
 
 function syncSavedDesigns() {
   const select = $("savedDesigns");
-  const items = readSavedDesigns();
+  const allItems = readSavedDesigns();
+  const folder = $("designFolderFilter").value || "all";
+  const items = folder === "all" ? allItems : allItems.filter(item => item.folder === folder);
   const current = select.value;
   select.innerHTML = "";
   if (!items.length) {
-    const opt = new Option("No saved designs", "");
+    const opt = new Option(folder === "all" ? "No saved designs" : "No designs in this folder", "");
     select.add(opt);
     $("renameName").value = "";
     $("loadDesign").disabled = true;
     $("renameDesign").disabled = true;
     $("deleteDesign").disabled = true;
+    $("moveDesign").disabled = true;
     return;
   }
   items.forEach(item => select.add(new Option(item.name, item.name)));
@@ -996,26 +1031,109 @@ function syncSavedDesigns() {
   $("loadDesign").disabled = !hasSelection;
   $("renameDesign").disabled = !hasSelection;
   $("deleteDesign").disabled = !hasSelection;
+  const selected = items.find(item => item.name === select.value);
+  $("moveDesignFolder").value = selected.folder;
+  $("moveDesign").disabled = !hasSelection || selected.folder === $("moveDesignFolder").value;
 }
 
 $("savedDesigns").addEventListener("change", () => {
   $("renameName").value = $("savedDesigns").value;
+  const item = readSavedDesigns().find(design => design.name === $("savedDesigns").value);
+  if (item) {
+    $("moveDesignFolder").value = item.folder;
+    $("moveDesign").disabled = true;
+  }
 });
+
+$("designFolderFilter").addEventListener("change", () => {
+  $("deleteDesignFolder").disabled = $("designFolderFilter").value === "all" ||
+    $("designFolderFilter").value === GENERAL_FOLDER;
+  syncSavedDesigns();
+});
+$("moveDesignFolder").addEventListener("change", () => {
+  const item = readSavedDesigns().find(design => design.name === $("savedDesigns").value);
+  $("moveDesign").disabled = !item || item.folder === $("moveDesignFolder").value;
+});
+
+$("createDesignFolder").onclick = () => {
+  const name = $("newDesignFolder").value.trim().slice(0, 24);
+  if (!name) {
+    $("saved").textContent = "Pehle folder ka naam likhein.";
+    return;
+  }
+  try {
+    const store = readDesignStore();
+    if (store.folders.some(folder => folder.toLowerCase() === name.toLowerCase())) {
+      throw new Error("Is naam ka folder pehle se hai.");
+    }
+    store.folders.push(name);
+    writeSavedDesigns(store.designs, store.folders);
+    syncDesignFolders();
+    $("designFolderFilter").value = name;
+    $("deleteDesignFolder").disabled = false;
+    $("newDesignFolder").value = "";
+    syncSavedDesigns();
+    $("saved").textContent = `Folder "${name}" bana diya.`;
+  } catch (e) {
+    $("saved").textContent = `Folder nahi bana: ${e.message}`;
+  }
+};
+
+$("deleteDesignFolder").onclick = () => {
+  const folder = $("designFolderFilter").value;
+  if (!folder || folder === "all" || folder === GENERAL_FOLDER) return;
+  if (!confirm(`"${folder}" folder delete karein? Iske designs General mein move honge.`)) return;
+  try {
+    const store = readDesignStore();
+    const designs = store.designs.map(item => item.folder === folder ? { ...item, folder: GENERAL_FOLDER } : item);
+    const folders = store.folders.filter(item => item !== folder);
+    writeSavedDesigns(designs, folders);
+    syncDesignFolders();
+    $("designFolderFilter").value = GENERAL_FOLDER;
+    syncSavedDesigns();
+    $("saved").textContent = `Folder "${folder}" delete hua; uske designs General mein hain.`;
+  } catch (e) {
+    $("saved").textContent = `Folder delete nahi hua: ${e.message}`;
+  }
+};
+
+$("moveDesign").onclick = () => {
+  try {
+    const store = readDesignStore();
+    const item = store.designs.find(design => design.name === $("savedDesigns").value);
+    if (!item) throw new Error("Pehle saved design chunein.");
+    const folder = $("moveDesignFolder").value;
+    if (!store.folders.includes(folder)) throw new Error("Destination folder nahi mila.");
+    item.folder = folder;
+    writeSavedDesigns(store.designs, store.folders);
+    syncDesignFolders();
+    syncSavedDesigns();
+    $("saved").textContent = `Design "${item.name}" "${folder}" folder mein move ho gaya.`;
+  } catch (e) {
+    $("saved").textContent = `Design move nahi hua: ${e.message}`;
+  }
+};
 
 $("saveDesign").onclick = () => {
   try {
-    const list = readSavedDesigns();
+    const store = readDesignStore();
+    const list = store.designs;
     const name = (state.designName || "My story").trim() || "My story";
     const payload = {
       name,
+      folder: store.designs.find(item => item.name.toLowerCase() === name.toLowerCase())?.folder ||
+        ($("designFolderFilter").value === "all" ? GENERAL_FOLDER : $("designFolderFilter").value),
       state: { ...state },
       images: Object.fromEntries([state.photo, state.bg, state.logo].filter(Boolean).map(id => [id, IMG[id]]))
     };
     const idx = list.findIndex(item => item.name.toLowerCase() === name.toLowerCase());
     if (idx >= 0) list[idx] = payload;
     else list.push(payload);
-    writeSavedDesigns(list);
+    writeSavedDesigns(list, store.folders);
+    syncDesignFolders();
     syncSavedDesigns();
+    $("savedDesigns").value = name;
+    $("renameName").value = name;
     $("saved").textContent = `Design "${name}" save ho gaya`;
   } catch (e) {
     $("saved").textContent = "Design save nahi ho saka. Browser storage ki jagah check karein.";
@@ -1352,6 +1470,7 @@ try {
 
 normalizeSlides();
 syncControls();
+syncDesignFolders();
 syncSavedDesigns();
 try {
   syncBackgroundLibrary();

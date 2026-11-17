@@ -177,6 +177,14 @@
         <button type="button" id="saveDesign">Save design</button>
         <button type="button" class="ghost" id="loadDesign">Load</button>
       </div>
+      <div class="row">
+        <div><label for="designFolderFilter">Design folder</label><select id="designFolderFilter"></select></div>
+        <div><label for="newDesignFolder">New folder name</label><input type="text" id="newDesignFolder" maxlength="24" placeholder="Campaign ideas"></div>
+      </div>
+      <div class="inline-buttons">
+        <button type="button" class="ghost" id="createDesignFolder">Create folder</button>
+        <button type="button" class="ghost" id="deleteDesignFolder">Delete folder</button>
+      </div>
       <div>
         <label for="shareLink">Shareable design link</label>
         <input type="text" id="shareLink" readonly>
@@ -184,6 +192,10 @@
       </div>
       <button type="button" class="ghost" id="createShareLink">Create and copy link</button>
       <div><label for="savedDesigns">Saved designs</label><select id="savedDesigns"></select></div>
+      <div class="row">
+        <div><label for="moveDesignFolder">Move selected design to</label><select id="moveDesignFolder"></select></div>
+        <div class="align-end"><button type="button" class="ghost" id="moveDesign">Move design</button></div>
+      </div>
       <div><label for="renameName">Rename selected design to</label><input type="text" id="renameName" maxlength="30"></div>
       <div class="inline-buttons">
         <button type="button" class="ghost" id="renameDesign">Rename selected</button>
