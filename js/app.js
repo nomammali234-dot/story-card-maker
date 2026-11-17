@@ -220,6 +220,17 @@ const LANGUAGE_EN = {
   ".tabs [aria-controls='p-image']": "Image",
   ".tabs [aria-controls='p-size']": "Size",
   ".tabs [aria-controls='p-carousel']": "Carousel",
+  "#toolProfile": "Profile",
+  "#toolText": "Story text",
+  "#toolQr": "QR code",
+  "#toolFonts": "Custom fonts",
+  "#toolLayers": "Layers & stickers",
+  "#toolImages": "Images",
+  "#toolBrand": "Brand kit",
+  "#toolBackgrounds": "Backgrounds",
+  "#toolExport": "Size & save",
+  "#toolBackup": "Backup",
+  "#toolCarousel": "Carousel",
   "label[for='templateSearch']": "Template search",
   "label[for='tpl']": "Template",
   "label[for='favoriteTemplates']": "Favorite templates",
@@ -1481,14 +1492,14 @@ $("exportSchedule").onclick = () => {
 }));
 
 const tabs = [...document.querySelectorAll("[role=tab]")];
-function openTab(tab) {
+function openTab(tab, focus = true) {
   tabs.forEach(t => {
     const on = t === tab;
     t.setAttribute("aria-selected", on);
     t.tabIndex = on ? 0 : -1;
     $(t.getAttribute("aria-controls")).hidden = !on;
   });
-  tab.focus();
+  if (focus) tab.focus();
 }
 
 tabs.forEach((t, i) => {
@@ -1496,6 +1507,22 @@ tabs.forEach((t, i) => {
   t.onkeydown = e => {
     if (e.key === "ArrowRight") openTab(tabs[(i + 1) % tabs.length]);
     if (e.key === "ArrowLeft") openTab(tabs[(i + tabs.length - 1) % tabs.length]);
+  };
+});
+
+const toolButtons = [...document.querySelectorAll("[data-tool-tab]")];
+toolButtons.forEach(button => {
+  button.onclick = () => {
+    const tab = $(button.dataset.toolTab);
+    if (!tab) return;
+    openTab(tab, false);
+    toolButtons.forEach(item => {
+      const active = item === button;
+      if (active) item.setAttribute("aria-current", "page");
+      else item.removeAttribute("aria-current");
+    });
+    const target = $(button.dataset.toolTarget) || $(tab.getAttribute("aria-controls"));
+    if (target) target.scrollIntoView({ block: "start", behavior: "smooth" });
   };
 });
 

@@ -36,7 +36,21 @@
       </div>
       <span class="panel-hint">Changes save automatically</span>
     </div>
-    <div class="tabs" role="tablist" aria-label="Setting ke hisse">
+    <nav id="toolToolbar" class="tool-toolbar" aria-label="Story tools">
+      <button type="button" class="tool-button" id="toolProfile" data-tool-tab="t-profile" aria-controls="p-profile" aria-current="page">Profile</button>
+      <button type="button" class="tool-button" id="toolText" data-tool-tab="t-text" data-tool-target="toolStoryText" aria-controls="p-text">Story text</button>
+      <button type="button" class="tool-button" id="toolQr" data-tool-tab="t-text" data-tool-target="toolQrSection" aria-controls="p-text">QR code</button>
+      <button type="button" class="tool-button" id="toolFonts" data-tool-tab="t-text" data-tool-target="toolFontsSection" aria-controls="p-text">Custom fonts</button>
+      <button type="button" class="tool-button" id="toolLayers" data-tool-tab="t-text" data-tool-target="toolLayersSection" aria-controls="p-text">Layers & stickers</button>
+      <button type="button" class="tool-button" id="toolImages" data-tool-tab="t-image" aria-controls="p-image">Images</button>
+      <button type="button" class="tool-button" id="toolBrand" data-tool-tab="t-image" data-tool-target="toolBrandSection" aria-controls="p-image">Brand kit</button>
+      <button type="button" class="tool-button" id="toolBackgrounds" data-tool-tab="t-image" data-tool-target="toolBackgroundSection" aria-controls="p-image">Backgrounds</button>
+      <button type="button" class="tool-button" id="toolExport" data-tool-tab="t-size" aria-controls="p-size">Size & save</button>
+      <button type="button" class="tool-button" id="toolBackup" data-tool-tab="t-size" data-tool-target="toolBackupSection" aria-controls="p-size">Backup</button>
+      <button type="button" class="tool-button" id="toolCarousel" data-tool-tab="t-carousel" aria-controls="p-carousel">Carousel</button>
+    </nav>
+
+    <div class="tabs" role="tablist" aria-label="Setting ke hisse" hidden>
       <button role="tab" id="t-profile" aria-controls="p-profile" aria-selected="true">Profile</button>
       <button role="tab" id="t-text" aria-controls="p-text" aria-selected="false" tabindex="-1">Text</button>
       <button role="tab" id="t-image" aria-controls="p-image" aria-selected="false" tabindex="-1">Image</button>
@@ -44,7 +58,7 @@
       <button role="tab" id="t-carousel" aria-controls="p-carousel" aria-selected="false" tabindex="-1">Carousel</button>
     </div>
 
-    <div role="tabpanel" id="p-profile" aria-labelledby="t-profile" class="fields">
+    <div role="tabpanel" id="p-profile" aria-labelledby="toolProfile" class="fields">
       <div>
         <label for="templateSearch">Template search</label><input type="search" id="templateSearch" placeholder="Search templates">
         <label for="tpl">Template</label><select id="tpl" data-k="tpl"></select>
@@ -63,7 +77,7 @@
       </div>
     </div>
 
-    <div role="tabpanel" id="p-text" aria-labelledby="t-text" class="fields" hidden>
+    <div role="tabpanel" id="p-text" aria-labelledby="toolText" class="fields" hidden>
       <div class="row">
         <div><label for="preset">Story preset</label>
           <select id="preset">
@@ -75,7 +89,7 @@
           </select></div>
         <div class="align-end"><button type="button" class="ghost" id="applyPreset">Use preset</button></div>
       </div>
-      <div><label for="text">Matan</label><textarea id="text" data-k="text"></textarea>
+      <div id="toolStoryText"><label for="text">Matan</label><textarea id="text" data-k="text"></textarea>
         <p class="help">Lafz ko numaya karne ke liye usay <b>**dohre star**</b> ke andar likhein.</p></div>
       <div class="row">
         <div><label for="tFont">Kahani ka font</label><select id="tFont" data-k="tFont"></select></div>
@@ -116,7 +130,7 @@
       <div><label for="foot">Aakhri line</label><input type="text" id="foot" data-k="foot" maxlength="60">
         <p class="help">Khali chhorein to nazar nahi aayegi.</p></div>
       <hr>
-      <h2 class="section-title">QR code</h2>
+      <h2 class="section-title" id="toolQrSection">QR code</h2>
       <div><label for="qrText">Website or social profile link</label><input type="url" id="qrText" maxlength="500" placeholder="https://example.com"></div>
       <div class="inline-buttons">
         <button type="button" class="ghost" id="makeQr">Add QR code</button>
@@ -124,12 +138,12 @@
       </div>
       <p class="help">QR code will appear on your card and in exported images.</p>
       <hr>
-      <h2 class="section-title">Custom fonts</h2>
+      <h2 class="section-title" id="toolFontsSection">Custom fonts</h2>
       <div><label for="fontFile">Upload a font (TTF, OTF, WOFF)</label><input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"></div>
       <button type="button" class="ghost" id="removeCustomFont">Remove selected uploaded font</button>
       <p class="help">Fonts are stored only in this browser. Keep each file under 1 MB.</p>
       <hr>
-      <h2 class="section-title">Layer manager</h2>
+      <h2 class="section-title" id="toolLayersSection">Layer manager</h2>
       <p class="help">Show or hide card parts and change which parts sit above others.</p>
       <div id="layerList" class="layer-list" aria-label="Card layers"></div>
       <hr>
@@ -148,7 +162,7 @@
       <button type="button" class="ghost" id="removeSticker" disabled>Remove selected sticker</button>
     </div>
 
-    <div role="tabpanel" id="p-image" aria-labelledby="t-image" class="fields" hidden>
+    <div role="tabpanel" id="p-image" aria-labelledby="toolImages" class="fields" hidden>
       <div class="ai-tool">
         <p class="help">AI se background banane ke liye Google AI Studio kholein, image download karein, phir neeche upload karein. Apni API key is app mein paste na karein.</p>
         <a class="button-link" href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio kholein</a>
@@ -164,7 +178,7 @@
       <div><label for="watermarkText">Watermark text</label><input type="text" id="watermarkText" data-k="watermarkText" maxlength="24"></div>
       <label class="checkbox"><input type="checkbox" id="watermark" data-k="watermark"> Watermark dikhayein</label>
       <hr>
-      <h2 class="section-title">Brand kit</h2>
+      <h2 class="section-title" id="toolBrandSection">Brand kit</h2>
       <div><label for="brandKitName">Brand kit name</label><input type="text" id="brandKitName" maxlength="30" placeholder="My brand"></div>
       <div class="inline-buttons"><button type="button" class="ghost" id="saveBrandKit">Save current brand kit</button></div>
       <div><label for="brandKits">Saved brand kits</label><select id="brandKits"></select></div>
@@ -173,7 +187,7 @@
         <button type="button" class="ghost" id="deleteBrandKit">Delete</button>
       </div>
       <hr>
-      <h2 class="section-title">Background library</h2>
+      <h2 class="section-title" id="toolBackgroundSection">Background library</h2>
       <div><label for="backgroundName">Background ka naam</label><input type="text" id="backgroundName" maxlength="30" placeholder="My background"></div>
       <button type="button" class="ghost" id="saveBackground">Current background save karein</button>
       <div><label for="savedBackgrounds">Saved backgrounds</label><select id="savedBackgrounds"></select></div>
@@ -208,7 +222,7 @@
         <p class="help">Andhera barhane se matan saaf parha jata hai.</p></div>
     </div>
 
-    <div role="tabpanel" id="p-size" aria-labelledby="t-size" class="fields" hidden>
+    <div role="tabpanel" id="p-size" aria-labelledby="toolExport" class="fields" hidden>
       <div><label for="ratio">Card ka size</label>
         <select id="ratio" data-k="ratio"><option value="r916">Story (9:16)</option><option value="r45">Post (4:5)</option><option value="r34">Mini Post (3:4)</option><option value="r11">Square (1:1)</option><option value="r169">Banner (16:9)</option><option value="auto">Matan ke hisab se</option></select></div>
       <div><label for="exportW">Download ki chorai</label>
@@ -222,7 +236,7 @@
         <button type="button" class="ghost" id="loadDesign">Load</button>
       </div>
       <hr>
-      <h2 class="section-title">File backup</h2>
+      <h2 class="section-title" id="toolBackupSection">File backup</h2>
       <p class="help">Download or restore your designs on this device. This is a local file backup, not cloud sync.</p>
       <button type="button" class="ghost" id="exportBackup">Download backup file</button>
       <div><label for="backupFile">Choose a backup file to restore</label><input type="file" id="backupFile" accept="application/json,.json"></div>
@@ -253,7 +267,7 @@
       <div><button type="button" class="ghost" id="reset">Naya card (sab saaf)</button></div>
     </div>
 
-    <div role="tabpanel" id="p-carousel" aria-labelledby="t-carousel" class="fields" hidden>
+    <div role="tabpanel" id="p-carousel" aria-labelledby="toolCarousel" class="fields" hidden>
       <p class="help">Har slide ka title aur matan Profile aur Text tabs mein edit karein. Design settings sab slides par apply hoti hain. Mobile par preview card ko left/right swipe karein; computer par card ko left/right drag karein.</p>
       <div>
         <label for="bulkText">Bulk text se slides banayein</label>

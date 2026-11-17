@@ -166,6 +166,43 @@ h1 {
   box-shadow: inset 0 0 0 1px rgba(169, 157, 255, .3);
 }
 
+.tool-toolbar {
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 20px;
+  padding: 6px;
+  border: 1px solid rgba(150, 169, 210, .12);
+  border-radius: 12px;
+  background: #0b1020;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .22);
+}
+
+.tool-button {
+  flex: 1 0 88px;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: .76rem;
+  font-weight: 650;
+}
+
+.tool-button:hover { border-color: rgba(169, 157, 255, .2); }
+.tool-button[aria-current="page"] {
+  border-color: rgba(169, 157, 255, .3);
+  background: linear-gradient(135deg, rgba(139, 123, 255, .23), rgba(107, 140, 255, .16));
+  color: #f5f3ff;
+}
+
+.section-title[id], .fields[role="tabpanel"], #toolStoryText { scroll-margin-top: 200px; }
+
 .fields { display: grid; gap: 16px; }
 .fields > div, .fields > label { min-width: 0; }
 .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
