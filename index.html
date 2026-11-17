@@ -17,6 +17,13 @@
     <h1>Story Maker</h1>
     <p>Kahani likhein, template chunein, aur card ko PNG bana kar download karein.</p>
   </div>
+  <div class="language-switch">
+    <label for="siteLanguage">Language</label>
+    <select id="siteLanguage" aria-label="Interface language">
+      <option value="ur">Roman Urdu</option>
+      <option value="en">English</option>
+    </select>
+  </div>
   <span class="header-status"><span aria-hidden="true"></span> Ready to create</span>
 </header>
 
@@ -38,7 +45,14 @@
     </div>
 
     <div role="tabpanel" id="p-profile" aria-labelledby="t-profile" class="fields">
-      <div><label for="tpl">Template</label><select id="tpl" data-k="tpl"></select></div>
+      <div>
+        <label for="templateSearch">Template search</label><input type="search" id="templateSearch" placeholder="Search templates">
+        <label for="tpl">Template</label><select id="tpl" data-k="tpl"></select>
+        <div class="row template-favorites">
+          <div><label for="favoriteTemplates">Favorite templates</label><select id="favoriteTemplates"></select></div>
+          <div class="align-end"><button type="button" class="ghost" id="toggleTemplateFavorite">Add favorite</button></div>
+        </div>
+      </div>
       <div><label for="photoIn">Profile tasveer</label><input type="file" id="photoIn" accept="image/*">
         <button type="button" class="ghost" id="photoRm" hidden>Tasveer hataayen</button></div>
       <div><label for="name">Naam / Title</label><input type="text" id="name" data-k="name" maxlength="40"></div>
@@ -102,6 +116,23 @@
       <div><label for="foot">Aakhri line</label><input type="text" id="foot" data-k="foot" maxlength="60">
         <p class="help">Khali chhorein to nazar nahi aayegi.</p></div>
       <hr>
+      <h2 class="section-title">QR code</h2>
+      <div><label for="qrText">Website or social profile link</label><input type="url" id="qrText" maxlength="500" placeholder="https://example.com"></div>
+      <div class="inline-buttons">
+        <button type="button" class="ghost" id="makeQr">Add QR code</button>
+        <button type="button" class="ghost" id="removeQr">Remove QR code</button>
+      </div>
+      <p class="help">QR code will appear on your card and in exported images.</p>
+      <hr>
+      <h2 class="section-title">Custom fonts</h2>
+      <div><label for="fontFile">Upload a font (TTF, OTF, WOFF)</label><input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"></div>
+      <button type="button" class="ghost" id="removeCustomFont">Remove selected uploaded font</button>
+      <p class="help">Fonts are stored only in this browser. Keep each file under 1 MB.</p>
+      <hr>
+      <h2 class="section-title">Layer manager</h2>
+      <p class="help">Show or hide card parts and change which parts sit above others.</p>
+      <div id="layerList" class="layer-list" aria-label="Card layers"></div>
+      <hr>
       <h2 class="section-title">Stickers</h2>
       <p class="help">Sticker add karein, phir card par drag karke jagah badlein.</p>
       <div class="sticker-library" aria-label="Sticker library">
@@ -122,12 +153,25 @@
         <p class="help">AI se background banane ke liye Google AI Studio kholein, image download karein, phir neeche upload karein. Apni API key is app mein paste na karein.</p>
         <a class="button-link" href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio kholein</a>
       </div>
+      <div class="ai-tool">
+        <p class="help">Remove a photo background with an external tool, download the transparent PNG, then upload it here. The tool may have its own limits and privacy policy.</p>
+        <a class="button-link" href="https://www.remove.bg/" target="_blank" rel="noopener noreferrer">Open background remover</a>
+      </div>
       <div><label for="bgIn">Peeche ki tasveer</label><input type="file" id="bgIn" accept="image/*">
         <button type="button" class="ghost" id="bgRm" hidden>Tasveer hataayen</button></div>
       <div><label for="logoIn">Watermark / Logo</label><input type="file" id="logoIn" accept="image/*">
         <button type="button" class="ghost" id="logoRm" hidden>Logo hataayen</button></div>
       <div><label for="watermarkText">Watermark text</label><input type="text" id="watermarkText" data-k="watermarkText" maxlength="24"></div>
       <label class="checkbox"><input type="checkbox" id="watermark" data-k="watermark"> Watermark dikhayein</label>
+      <hr>
+      <h2 class="section-title">Brand kit</h2>
+      <div><label for="brandKitName">Brand kit name</label><input type="text" id="brandKitName" maxlength="30" placeholder="My brand"></div>
+      <div class="inline-buttons"><button type="button" class="ghost" id="saveBrandKit">Save current brand kit</button></div>
+      <div><label for="brandKits">Saved brand kits</label><select id="brandKits"></select></div>
+      <div class="inline-buttons">
+        <button type="button" class="ghost" id="applyBrandKit">Apply</button>
+        <button type="button" class="ghost" id="deleteBrandKit">Delete</button>
+      </div>
       <hr>
       <h2 class="section-title">Background library</h2>
       <div><label for="backgroundName">Background ka naam</label><input type="text" id="backgroundName" maxlength="30" placeholder="My background"></div>
@@ -177,6 +221,11 @@
         <button type="button" id="saveDesign">Save design</button>
         <button type="button" class="ghost" id="loadDesign">Load</button>
       </div>
+      <hr>
+      <h2 class="section-title">File backup</h2>
+      <p class="help">Download or restore your designs on this device. This is a local file backup, not cloud sync.</p>
+      <button type="button" class="ghost" id="exportBackup">Download backup file</button>
+      <div><label for="backupFile">Choose a backup file to restore</label><input type="file" id="backupFile" accept="application/json,.json"></div>
       <div class="row">
         <div><label for="designFolderFilter">Design folder</label><select id="designFolderFilter"></select></div>
         <div><label for="newDesignFolder">New folder name</label><input type="text" id="newDesignFolder" maxlength="24" placeholder="Campaign ideas"></div>
@@ -250,7 +299,8 @@
         <button type="button" class="ghost" id="removeSlide">Slide hataayen</button>
       </div>
       <button type="button" id="downloadCarousel">Carousel ZIP download</button>
-      <p class="help">ZIP file mein har slide alag PNG image hogi.</p>
+      <button type="button" class="ghost" id="downloadPdf">Carousel PDF download</button>
+      <p class="help">ZIP mein har slide alag PNG image hogi; PDF mein har slide ek page par hogi.</p>
     </div>
   </section>
 
@@ -264,6 +314,7 @@
     </div>
     <div class="card" id="card">
       <div class="card-background" id="cardBackground" aria-hidden="true" hidden></div>
+      <div class="card-qr" id="cardQr" aria-label="QR code" hidden></div>
       <div class="watermark" id="cardWatermark" aria-hidden="true"></div>
       <div class="head"><div class="avatar" id="av"></div><div><div class="name" id="cName"></div><div class="sub" id="cSub"></div></div></div>
       <div class="mid"><div class="story" id="cStory"></div></div>
@@ -283,6 +334,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -417,6 +417,26 @@ button.ghost {
   background-size: contain;
 }
 
+.card-qr {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 7px;
+  border-radius: 10px;
+  background: #fff;
+  line-height: 0;
+}
+
+.card-qr canvas, .card-qr img { display: block; }
+.language-switch { display: grid; gap: 3px; margin-left: auto; min-width: 118px; }
+.language-switch label { color: var(--muted); font-size: .72rem; }
+.language-switch select { min-height: 34px; padding: 5px 8px; }
+.header-status { margin-left: 0; }
+.layer-list { display: grid; gap: 7px; }
+.layer-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.025); }
+.layer-actions { display: flex; gap: 6px; }
+.layer-actions button { padding: 5px 8px; font-size: .78rem; }
+
 .dragging { box-shadow: 0 0 0 3px rgba(139, 123, 255, .7); }
 .head { display: flex; align-items: center; gap: 12px; }
 .avatar {
@@ -471,6 +491,7 @@ button.ghost {
   .align-end button { width: 100%; }
   .card { width: min(360px, 100%); padding: 18px 16px; }
   .bar button { flex: 1 1 auto; }
+  .language-switch { margin-left: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -44,20 +44,311 @@ const DEFAULT = {
   exportName: "story-card", jpgQuality: 92,
   customGradient: false, gradientStart: "#243b55", gradientEnd: "#141e30", gradientAngle: 135,
   bgBrightness: 100, bgSaturation: 100, bgBlur: 0, bgPositionX: 50, bgPositionY: 50,
-  stickers: [],
+  stickers: [], qrText: "", layerOrder: ["profile", "story", "footer", "watermark", "qr", "stickers"], hiddenLayers: {},
 };
 const KEY = "story-maker-v1";
 const DESIGN_KEY = "story-maker-designs-v1";
 const SCHEDULE_KEY = "story-maker-schedule-v1";
 const BACKGROUND_KEY = "story-maker-backgrounds-v1";
+const FONT_KEY = "story-maker-fonts-v1";
+const BRAND_KEY = "story-maker-brand-kits-v1";
+const FAVORITES_KEY = "story-maker-template-favorites-v1";
+const LANGUAGE_KEY = "story-maker-language-v1";
 const slideFields = ["name", "sub", "text", "foot"];
 let state = { ...DEFAULT, activeSlide: 0, slides: [{ name: DEFAULT.name, sub: DEFAULT.sub, text: DEFAULT.text, foot: DEFAULT.foot }] }, IMG = {};
 let hist = [], at = -1, timer = null;
 let selectedStickerId = "";
 let stickerDrag = null;
+let currentLanguage = localStorage.getItem(LANGUAGE_KEY) === "en" ? "en" : "ur";
+
+function readCustomFontRecords() {
+  const raw = localStorage.getItem(FONT_KEY);
+  if (!raw) return [];
+  const records = JSON.parse(raw);
+  if (!Array.isArray(records)) throw new Error("Custom font data durust nahi hai.");
+  return records.filter(item => item && typeof item.name === "string" && /^[\w -]{1,30}$/.test(item.name) &&
+    typeof item.dataUrl === "string" && /^data:[\w.+/-]+;base64,[A-Za-z0-9+/=]+$/.test(item.dataUrl));
+}
+
+let customFontRecords = [];
+const loadedCustomFonts = new Map();
+try {
+  customFontRecords = readCustomFontRecords();
+  customFontRecords.forEach(font => {
+    if (/^[\w -]{1,30}$/.test(font.name) && !FONTS[font.name]) FONTS[font.name] = `"${font.name}"`;
+  });
+} catch (e) {
+  $("saved").textContent = `Custom fonts load nahi huay: ${e.message}`;
+}
+
+async function loadCustomFont(font) {
+  const face = new FontFace(font.name, `url(${font.dataUrl})`);
+  await face.load();
+  document.fonts.add(face);
+  loadedCustomFonts.set(font.name, face);
+}
+
+customFontRecords.forEach(font => {
+  if (!/^[\w -]{1,30}$/.test(font.name) || !/^data:[\w.+/-]+;base64,[A-Za-z0-9+/=]+$/.test(font.dataUrl)) return;
+  loadCustomFont(font).catch(error => {
+    $("saved").textContent = `Font "${font.name}" load nahi hua: ${error.message}`;
+  });
+});
+
+function refreshFontOptions() {
+  [$("nFont"), $("tFont")].forEach(select => {
+    const selected = select.value;
+    select.replaceChildren(...Object.keys(FONTS).map(name => new Option(name, name)));
+    if (FONTS[selected]) select.value = selected;
+  });
+}
+
+$("fontFile").addEventListener("change", async () => {
+  const file = $("fontFile").files[0];
+  if (!file) return;
+  if (file.size > 750 * 1024) {
+    $("saved").textContent = "Font file 750 KB se chhoti honi chahiye.";
+    $("fontFile").value = "";
+    return;
+  }
+  const extension = file.name.split(".").pop().toLowerCase();
+  if (!["ttf", "otf", "woff", "woff2"].includes(extension)) {
+    $("saved").textContent = "Sirf TTF, OTF, WOFF ya WOFF2 font upload karein.";
+    $("fontFile").value = "";
+    return;
+  }
+  const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^\w -]/g, "").trim().slice(0, 24) || "Custom font";
+  const name = /^[\w -]{1,30}$/.test(baseName) && !FONTS[baseName] ? baseName : `${baseName.slice(0, 20)} Custom`;
+  if (FONTS[name]) {
+    $("saved").textContent = "Is naam ka font pehle se maujood hai. File rename karke upload karein.";
+    $("fontFile").value = "";
+    return;
+  }
+  try {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Font file read nahi ho saki."));
+      reader.readAsDataURL(file);
+    });
+    const record = { name, dataUrl };
+    const records = [...readCustomFontRecords(), record];
+    const face = new FontFace(name, `url(${dataUrl})`);
+    await face.load();
+    localStorage.setItem(FONT_KEY, JSON.stringify(records));
+    document.fonts.add(face);
+    loadedCustomFonts.set(name, face);
+    customFontRecords = records;
+    FONTS[name] = `"${name}"`;
+    refreshFontOptions();
+    $("nFont").value = name;
+    $("tFont").value = name;
+    state.nFont = name;
+    state.tFont = name;
+    changed();
+    $("saved").textContent = `Custom font "${name}" add ho gaya.`;
+  } catch (e) {
+    $("saved").textContent = `Custom font save nahi hua: ${e.message}`;
+  } finally {
+    $("fontFile").value = "";
+  }
+});
+
+$("removeCustomFont").onclick = () => {
+  const name = [state.tFont, state.nFont].find(fontName => loadedCustomFonts.has(fontName));
+  if (!name) {
+    $("saved").textContent = "Pehle custom font select karein.";
+    return;
+  }
+  try {
+    const records = readCustomFontRecords().filter(font => font.name !== name);
+    localStorage.setItem(FONT_KEY, JSON.stringify(records));
+    const face = loadedCustomFonts.get(name);
+    if (face) document.fonts.delete(face);
+    loadedCustomFonts.delete(name);
+    delete FONTS[name];
+    customFontRecords = records;
+    if (state.nFont === name) state.nFont = DEFAULT.nFont;
+    if (state.tFont === name) state.tFont = DEFAULT.tFont;
+    refreshFontOptions();
+    syncControls();
+    changed();
+    $("saved").textContent = `Custom font "${name}" remove ho gaya.`;
+  } catch (e) {
+    $("saved").textContent = `Custom font remove nahi hua: ${e.message}`;
+  }
+};
 
 const fill = (sel, items) => Object.keys(items).forEach(k => sel.add(new Option(k, k)));
 fill($("tpl"), TEMPLATES); fill($("nFont"), FONTS); fill($("tFont"), FONTS);
+
+function readTemplateFavorites() {
+  const raw = localStorage.getItem(FAVORITES_KEY);
+  if (!raw) return [];
+  const items = JSON.parse(raw);
+  if (!Array.isArray(items)) throw new Error("Favorite template data durust nahi hai.");
+  return items.filter(name => Object.prototype.hasOwnProperty.call(TEMPLATES, name));
+}
+
+function syncTemplateFavorites() {
+  const select = $("favoriteTemplates");
+  let favorites = [];
+  try {
+    favorites = readTemplateFavorites();
+  } catch (e) {
+    $("saved").textContent = `Favorite templates load nahi huay: ${e.message}`;
+  }
+  select.replaceChildren();
+  if (!favorites.length) select.add(new Option("No favorites yet", ""));
+  favorites.forEach(name => select.add(new Option(name, name)));
+  const button = $("toggleTemplateFavorite");
+  const isFavorite = favorites.includes(state.tpl);
+  button.textContent = currentLanguage === "en"
+    ? (isFavorite ? "Remove favorite" : "Add favorite")
+    : (isFavorite ? "Favorite se hataayein" : "Favorite mein rakhein");
+}
+
+const LANGUAGE_EN = {
+  ".brand-copy > p:last-child": "Write a story, choose a template, and download your card as an image.",
+  ".panel-heading .eyebrow": "YOUR WORKSPACE",
+  ".panel-heading h2": "Design your story",
+  ".panel-hint": "Changes save automatically",
+  ".stage-heading .eyebrow": "PREVIEW",
+  ".stage-heading h2": "Live canvas",
+  ".tabs [aria-controls='p-profile']": "Profile",
+  ".tabs [aria-controls='p-text']": "Text",
+  ".tabs [aria-controls='p-image']": "Image",
+  ".tabs [aria-controls='p-size']": "Size",
+  ".tabs [aria-controls='p-carousel']": "Carousel",
+  "label[for='templateSearch']": "Template search",
+  "label[for='tpl']": "Template",
+  "label[for='favoriteTemplates']": "Favorite templates",
+  "label[for='photoIn']": "Profile photo",
+  "label[for='name']": "Name / title",
+  "label[for='sub']": "Subtitle",
+  "label[for='nFont']": "Name font",
+  "label[for='text']": "Story text",
+  "label[for='preset']": "Story preset",
+  "label[for='tFont']": "Story font",
+  "label[for='fontPair']": "Font pairing",
+  "label[for='align']": "Text alignment",
+  "label[for='textColor']": "Text color",
+  "label[for='foot']": "Footer line",
+  "label[for='qrText']": "Website or social profile link",
+  "label[for='fontFile']": "Upload a font (TTF, OTF, WOFF)",
+  "label[for='bgIn']": "Background image",
+  "label[for='logoIn']": "Watermark / logo",
+  "label[for='watermarkText']": "Watermark text",
+  "label[for='brandKitName']": "Brand kit name",
+  "label[for='brandKits']": "Saved brand kits",
+  "label[for='backgroundName']": "Background name",
+  "label[for='savedBackgrounds']": "Saved backgrounds",
+  "label[for='gradientStart']": "First gradient color",
+  "label[for='gradientEnd']": "Second gradient color",
+  "label[for='ratio']": "Card size",
+  "label[for='exportW']": "Download width",
+  "label[for='exportName']": "Download file name",
+  "label[for='designName']": "Design name",
+  "label[for='backupFile']": "Choose a backup file to restore",
+  "label[for='designFolderFilter']": "Design folder",
+  "label[for='newDesignFolder']": "New folder name",
+  "label[for='shareLink']": "Shareable design link",
+  "label[for='bulkText']": "Bulk text to create slides",
+  "label[for='slidesWanted']": "Number of slides",
+  "label[for='schedulePlatform']": "Platform",
+  "label[for='scheduleGap']": "Days between posts",
+  "label[for='scheduleStart']": "First post date and time",
+  "label[for='siteLanguage']": "Language",
+  "#applyPreset": "Use preset",
+  "#applyFontPair": "Apply pairing",
+  "#makeQr": "Add QR code",
+  "#removeQr": "Remove QR code",
+  "#removeCustomFont": "Remove selected uploaded font",
+  "#saveBrandKit": "Save current brand kit",
+  "#applyBrandKit": "Apply",
+  "#deleteBrandKit": "Delete",
+  "#saveBackground": "Save current background",
+  "#applyBackground": "Apply",
+  "#deleteBackground": "Delete",
+  "#saveDesign": "Save design",
+  "#loadDesign": "Load",
+  "#renameDesign": "Rename selected",
+  "#deleteDesign": "Delete selected",
+  "#createDesignFolder": "Create folder",
+  "#deleteDesignFolder": "Delete folder",
+  "#createShareLink": "Create and copy link",
+  "#exportBackup": "Download backup file",
+  "#generateSlides": "Create slides from text",
+  "#downloadPosts": "Download numbered post images ZIP",
+  "#schedulePosts": "Schedule posts",
+  "#exportSchedule": "Download calendar file",
+  "#addSlide": "Add slide",
+  "#duplicateSlide": "Duplicate slide",
+  "#removeSlide": "Remove slide",
+  "#downloadCarousel": "Download carousel ZIP",
+  "#downloadPdf": "Download carousel PDF",
+  "#dl": "Download PNG",
+  "#dlJpg": "Download JPG",
+  "#copy": "Copy image",
+  "#exportAllSizes": "Export all sizes ZIP",
+  "#undo": "Undo",
+  "#redo": "Redo",
+  "#reset": "New card (clear all)"
+};
+const LANGUAGE_ORIGINAL = new Map(Object.keys(LANGUAGE_EN).map(selector => {
+  const element = document.querySelector(selector);
+  return [selector, element ? element.textContent : ""];
+}));
+
+function applyLanguage() {
+  document.documentElement.lang = currentLanguage;
+  $("siteLanguage").value = currentLanguage;
+  Object.keys(LANGUAGE_EN).forEach(selector => {
+    const element = document.querySelector(selector);
+    if (element) element.textContent = currentLanguage === "en" ? LANGUAGE_EN[selector] : LANGUAGE_ORIGINAL.get(selector);
+  });
+  syncTemplateFavorites();
+}
+
+$("siteLanguage").addEventListener("change", () => {
+  currentLanguage = $("siteLanguage").value === "en" ? "en" : "ur";
+  try {
+    localStorage.setItem(LANGUAGE_KEY, currentLanguage);
+    applyLanguage();
+    $("saved").textContent = currentLanguage === "en" ? "Language preference saved." : "Zabaan ki setting save ho gayi.";
+  } catch (e) {
+    $("saved").textContent = `Language setting save nahi hui: ${e.message}`;
+  }
+});
+
+function filterTemplates() {
+  const query = $("templateSearch").value.trim().toLowerCase();
+  [...$("tpl").options].forEach(option => {
+    option.hidden = Boolean(query && !option.value.toLowerCase().includes(query) && option.value !== state.tpl);
+  });
+}
+
+$("templateSearch").addEventListener("input", filterTemplates);
+$("favoriteTemplates").addEventListener("change", () => {
+  const favorite = $("favoriteTemplates").value;
+  if (!favorite) return;
+  $("tpl").value = favorite;
+  $("tpl").dispatchEvent(new Event("change", { bubbles: true }));
+});
+
+$("toggleTemplateFavorite").onclick = () => {
+  try {
+    const favorites = readTemplateFavorites();
+    const index = favorites.indexOf(state.tpl);
+    if (index >= 0) favorites.splice(index, 1);
+    else favorites.push(state.tpl);
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    syncTemplateFavorites();
+    $("saved").textContent = index >= 0 ? "Template favorites se hata diya." : "Template favorite mein save ho gaya.";
+  } catch (e) {
+    $("saved").textContent = `Favorite update nahi hua: ${e.message}`;
+  }
+};
 
 const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
@@ -133,6 +424,9 @@ function render() {
     watermark.style.backgroundImage = "none";
     watermark.classList.remove("is-image");
   }
+  renderQr();
+  applyLayerStack();
+  renderLayerManager();
 
   $("nOut").textContent = state.nSize + " px";
   $("tOut").textContent = state.tSize + " px";
@@ -179,6 +473,147 @@ function renderStickers() {
   $("removeSticker").disabled = !state.stickers.some(sticker => sticker.id === selectedStickerId);
 }
 
+const LAYER_LABELS = {
+  profile: "Profile block",
+  story: "Story text",
+  footer: "Footer",
+  watermark: "Watermark",
+  qr: "QR code",
+  stickers: "Stickers"
+};
+const DEFAULT_LAYER_ORDER = ["profile", "story", "footer", "watermark", "qr", "stickers"];
+
+function normalizedLayerOrder() {
+  const saved = Array.isArray(state.layerOrder) ? state.layerOrder : [];
+  state.layerOrder = [...new Set([...saved.filter(key => DEFAULT_LAYER_ORDER.includes(key)), ...DEFAULT_LAYER_ORDER])];
+  return state.layerOrder;
+}
+
+function applyLayerStack() {
+  const hidden = state.hiddenLayers && typeof state.hiddenLayers === "object" ? state.hiddenLayers : {};
+  const elements = {
+    profile: $("card").querySelector(".head"),
+    story: $("card").querySelector(".mid"),
+    footer: $("cFoot"),
+    watermark: $("cardWatermark"),
+    qr: $("cardQr")
+  };
+  normalizedLayerOrder().forEach((key, index) => {
+    const element = elements[key];
+    if (element) {
+      element.style.zIndex = String(index + 1);
+      element.style.visibility = hidden[key] ? "hidden" : "visible";
+      element.style.pointerEvents = hidden[key] ? "none" : "";
+    }
+    if (key === "stickers") {
+      $("card").querySelectorAll(".card-sticker").forEach(sticker => {
+        sticker.style.zIndex = String(index + 1);
+        sticker.style.visibility = hidden.stickers ? "hidden" : "visible";
+        sticker.style.pointerEvents = hidden.stickers ? "none" : "";
+      });
+    }
+  });
+}
+
+function renderLayerManager() {
+  const list = $("layerList");
+  if (!list) return;
+  const order = normalizedLayerOrder();
+  const hidden = state.hiddenLayers && typeof state.hiddenLayers === "object" ? state.hiddenLayers : {};
+  list.replaceChildren();
+  order.forEach((key, index) => {
+    const row = document.createElement("div");
+    row.className = "layer-row";
+    const label = document.createElement("label");
+    label.className = "checkbox";
+    const toggle = document.createElement("input");
+    toggle.type = "checkbox";
+    toggle.checked = !hidden[key];
+    toggle.dataset.layerVisible = key;
+    label.append(toggle, document.createTextNode(LAYER_LABELS[key]));
+    const controls = document.createElement("span");
+    controls.className = "layer-actions";
+    const up = document.createElement("button");
+    up.type = "button";
+    up.className = "ghost";
+    up.textContent = "Up";
+    up.disabled = index === order.length - 1;
+    up.dataset.layerMove = "up";
+    up.dataset.layerKey = key;
+    up.setAttribute("aria-label", `Move ${LAYER_LABELS[key]} forward`);
+    const down = document.createElement("button");
+    down.type = "button";
+    down.className = "ghost";
+    down.textContent = "Down";
+    down.disabled = index === 0;
+    down.dataset.layerMove = "down";
+    down.dataset.layerKey = key;
+    down.setAttribute("aria-label", `Move ${LAYER_LABELS[key]} backward`);
+    controls.append(up, down);
+    row.append(label, controls);
+    list.append(row);
+  });
+}
+
+function renderQr() {
+  const container = $("cardQr");
+  container.replaceChildren();
+  if (!state.qrText || !window.QRCode) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
+  new QRCode(container, {
+    text: state.qrText,
+    width: 88,
+    height: 88,
+    colorDark: "#111827",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+$("layerList").addEventListener("change", e => {
+  const key = e.target.dataset.layerVisible;
+  if (!key) return;
+  state.hiddenLayers = { ...(state.hiddenLayers || {}), [key]: !e.target.checked };
+  changed();
+});
+
+$("layerList").addEventListener("click", e => {
+  const button = e.target.closest("[data-layer-move]");
+  if (!button) return;
+  const order = normalizedLayerOrder();
+  const index = order.indexOf(button.dataset.layerKey);
+  const next = index + (button.dataset.layerMove === "up" ? 1 : -1);
+  if (index < 0 || next < 0 || next >= order.length) return;
+  [order[index], order[next]] = [order[next], order[index]];
+  state.layerOrder = order;
+  changed();
+});
+
+$("makeQr").onclick = () => {
+  try {
+    const value = $("qrText").value.trim();
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) throw new Error("http ya https website link istemal karein.");
+    if (!window.QRCode) throw new Error("QR code library load nahi hui. Internet connection check karein.");
+    state.qrText = url.href;
+    syncControls();
+    changed();
+    $("saved").textContent = "QR code card par add ho gaya.";
+  } catch (e) {
+    $("saved").textContent = `QR code nahi bana: ${e.message}`;
+  }
+};
+
+$("removeQr").onclick = () => {
+  state.qrText = "";
+  syncControls();
+  changed();
+  $("saved").textContent = "QR code remove ho gaya.";
+};
+
 function removeSticker(id) {
   state.stickers = state.stickers.filter(sticker => sticker.id !== id);
   selectedStickerId = "";
@@ -202,6 +637,7 @@ function syncControls() {
     }
     el.value = state[k] ?? "";
   });
+  $("qrText").value = typeof state.qrText === "string" ? state.qrText : "";
 }
 
 function snapshot() {
@@ -247,6 +683,22 @@ function normalizeSlides() {
   state.activeSlide = Math.min(Math.max(0, Number(state.activeSlide) || 0), state.slides.length - 1);
   Object.assign(state, state.slides[state.activeSlide]);
   state.stickers = Array.isArray(state.stickers) ? state.stickers.map(sticker => ({ ...sticker })) : [];
+  state.qrText = typeof state.qrText === "string" && state.qrText.length <= 500 ? state.qrText : "";
+  if (state.qrText) {
+    try {
+      const url = new URL(state.qrText);
+      if (!["http:", "https:"].includes(url.protocol)) state.qrText = "";
+      else state.qrText = url.href;
+    } catch (e) {
+      state.qrText = "";
+    }
+  }
+  state.layerOrder = Array.isArray(state.layerOrder)
+    ? [...new Set(state.layerOrder.filter(key => DEFAULT_LAYER_ORDER.includes(key)))]
+    : [];
+  state.hiddenLayers = state.hiddenLayers && typeof state.hiddenLayers === "object" && !Array.isArray(state.hiddenLayers)
+    ? Object.fromEntries(DEFAULT_LAYER_ORDER.map(key => [key, typeof state.hiddenLayers[key] === "boolean" && state.hiddenLayers[key]]))
+    : {};
 }
 
 function updateSlideControls() {
@@ -333,6 +785,8 @@ $("tpl").addEventListener("change", () => {
   state.hl = "";
   state.textColor = "";
   syncControls();
+  syncTemplateFavorites();
+  filterTemplates();
   changed();
 });
 
@@ -486,6 +940,94 @@ $("deleteBackground").onclick = () => {
     $("saved").textContent = `Background "${item.name}" library se delete ho gaya.`;
   } catch (e) {
     $("saved").textContent = `Background delete nahi hua: ${e.message}`;
+  }
+};
+
+const BRAND_FIELDS = ["tpl", "hl", "textColor", "nFont", "tFont", "watermark", "watermarkText"];
+
+function readBrandKits() {
+  const raw = localStorage.getItem(BRAND_KEY);
+  if (!raw) return [];
+  const kits = JSON.parse(raw);
+  if (!Array.isArray(kits)) throw new Error("Brand kit data durust nahi hai.");
+  return kits.filter(kit => kit && typeof kit.name === "string" && kit.settings && typeof kit.settings === "object");
+}
+
+function syncBrandKits() {
+  const select = $("brandKits");
+  const previous = select.value;
+  const kits = readBrandKits();
+  select.replaceChildren();
+  if (!kits.length) select.add(new Option("No saved brand kits", ""));
+  kits.forEach(kit => select.add(new Option(kit.name, kit.name)));
+  if (kits.some(kit => kit.name === previous)) select.value = previous;
+  $("applyBrandKit").disabled = !kits.length;
+  $("deleteBrandKit").disabled = !kits.length;
+}
+
+$("saveBrandKit").onclick = () => {
+  try {
+    const kits = readBrandKits();
+    const name = $("brandKitName").value.trim().slice(0, 30);
+    if (!name) throw new Error("Brand kit ka naam likhein.");
+    const settings = Object.fromEntries(BRAND_FIELDS.map(key => [key, state[key]]));
+    const logoData = state.logo && IMG[state.logo] ? IMG[state.logo] : "";
+    const existing = kits.find(kit => kit.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      existing.name = name;
+      existing.settings = settings;
+      existing.logoData = logoData;
+    } else {
+      kits.push({ name, settings, logoData });
+    }
+    localStorage.setItem(BRAND_KEY, JSON.stringify(kits));
+    syncBrandKits();
+    $("brandKits").value = name;
+    $("saved").textContent = `Brand kit "${name}" save ho gaya.`;
+  } catch (e) {
+    $("saved").textContent = `Brand kit save nahi hua: ${e.message}`;
+  }
+};
+
+$("applyBrandKit").onclick = () => {
+  try {
+    const kit = readBrandKits().find(item => item.name === $("brandKits").value);
+    if (!kit) throw new Error("Pehle brand kit chunein.");
+    if (!TEMPLATES[kit.settings.tpl] || !FONTS[kit.settings.nFont] || !FONTS[kit.settings.tFont] ||
+        (kit.settings.hl && !/^#[0-9a-f]{6}$/i.test(kit.settings.hl)) ||
+        (kit.settings.textColor && !/^#[0-9a-f]{6}$/i.test(kit.settings.textColor))) {
+      throw new Error("Brand kit ke colors ya fonts invalid hain.");
+    }
+    BRAND_FIELDS.forEach(key => {
+      if (typeof kit.settings[key] === typeof DEFAULT[key]) state[key] = kit.settings[key];
+    });
+    if (kit.logoData) {
+      if (!kit.logoData.startsWith("data:image/")) throw new Error("Brand kit ka logo invalid hai.");
+      const id = `brand-${Date.now().toString(36)}`;
+      IMG[id] = kit.logoData;
+      state.logo = id;
+    } else {
+      state.logo = "";
+    }
+    $("brandKitName").value = kit.name;
+    syncControls();
+    changed();
+    $("saved").textContent = `Brand kit "${kit.name}" apply ho gaya.`;
+  } catch (e) {
+    $("saved").textContent = `Brand kit apply nahi hua: ${e.message}`;
+  }
+};
+
+$("deleteBrandKit").onclick = () => {
+  try {
+    const name = $("brandKits").value;
+    const kits = readBrandKits();
+    if (!name || !kits.some(kit => kit.name === name)) throw new Error("Pehle brand kit chunein.");
+    localStorage.setItem(BRAND_KEY, JSON.stringify(kits.filter(kit => kit.name !== name)));
+    syncBrandKits();
+    $("saved").textContent = `Brand kit "${name}" delete ho gaya.`;
+  } catch (e) {
+    $("saved").textContent = `Brand kit delete nahi hua: ${e.message}`;
   }
 };
 
@@ -1324,6 +1866,84 @@ function safeExportName() {
     .slice(0, 50) || "story-card";
 }
 
+const BACKUP_KEYS = [KEY, DESIGN_KEY, SCHEDULE_KEY, BACKGROUND_KEY, FONT_KEY, BRAND_KEY, FAVORITES_KEY, LANGUAGE_KEY];
+
+$("exportBackup").onclick = () => {
+  try {
+    const storage = Object.fromEntries(BACKUP_KEYS.map(key => [key, localStorage.getItem(key)]));
+    const backup = { app: "story-card-maker", version: 1, createdAt: new Date().toISOString(), storage };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "story-maker-backup.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    $("saved").textContent = "Backup file download ho gayi.";
+  } catch (e) {
+    $("saved").textContent = `Backup nahi ban saki: ${e.message}`;
+  }
+};
+
+$("backupFile").addEventListener("change", async () => {
+  const file = $("backupFile").files[0];
+  if (!file) return;
+  try {
+    if (file.size > 10 * 1024 * 1024) throw new Error("Backup file 10 MB se chhoti honi chahiye.");
+    const text = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Backup file read nahi ho saki."));
+      reader.readAsText(file);
+    });
+    const backup = JSON.parse(text);
+    if (!backup || backup.app !== "story-card-maker" || backup.version !== 1 || !backup.storage || typeof backup.storage !== "object" || Array.isArray(backup.storage)) {
+      throw new Error("Yeh Story Maker backup file nahi hai ya version support nahi hota.");
+    }
+    const keys = Object.keys(backup.storage);
+    if (keys.length !== BACKUP_KEYS.length || keys.some(key => !BACKUP_KEYS.includes(key)) ||
+        BACKUP_KEYS.some(key => typeof backup.storage[key] !== "string" && backup.storage[key] !== null)) {
+      throw new Error("Backup mein required data keys missing ya invalid hain.");
+    }
+    if (!confirm("Restore se is browser ke current designs aur settings replace ho jayenge. Kya aap jari rakhna chahte hain?")) return;
+
+    const previous = Object.fromEntries(BACKUP_KEYS.map(key => [key, localStorage.getItem(key)]));
+    try {
+      BACKUP_KEYS.forEach(key => {
+        if (backup.storage[key] === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, backup.storage[key]);
+      });
+    } catch (restoreError) {
+      const rollbackErrors = [];
+      BACKUP_KEYS.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (rollbackError) {
+          rollbackErrors.push(rollbackError.message);
+        }
+      });
+      BACKUP_KEYS.forEach(key => {
+        if (previous[key] === null) return;
+        try {
+          localStorage.setItem(key, previous[key]);
+        } catch (rollbackError) {
+          rollbackErrors.push(rollbackError.message);
+        }
+      });
+      if (rollbackErrors.length) {
+        throw new Error(`Restore fail hua (${restoreError.message}) aur rollback bhi mukammal nahi hua: ${rollbackErrors.join("; ")}`);
+      }
+      throw new Error(`Restore fail hua; purana data wapas rakh diya gaya: ${restoreError.message}`);
+    }
+    $("saved").textContent = "Backup restore ho gayi. App ko update karne ke liye reload ho raha hai.";
+    setTimeout(() => location.reload(), 1200);
+  } catch (e) {
+    $("saved").textContent = `Backup restore nahi hui: ${e.message}`;
+  } finally {
+    $("backupFile").value = "";
+  }
+});
+
 async function exportCarousel() {
   if (!window.html2canvas) throw new Error("HTML to canvas load nahi hua. Internet connection check karein.");
   if (!window.JSZip) throw new Error("Carousel ZIP banane ke liye internet connection check karein.");
@@ -1350,6 +1970,41 @@ async function exportCarousel() {
     link.download = `${safeExportName()}-carousel.zip`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 3000);
+  } finally {
+    state.activeSlide = active;
+    Object.assign(state, state.slides[active]);
+    syncControls();
+    render();
+  }
+}
+
+async function exportCarouselPdf() {
+  const PdfDocument = window.jspdf && window.jspdf.jsPDF;
+  if (!PdfDocument) throw new Error("PDF library load nahi hui. Internet connection check karein.");
+  if (!window.html2canvas) throw new Error("HTML to canvas load nahi hua. Internet connection check karein.");
+  saveActiveSlide();
+  const active = state.activeSlide;
+  let pdf;
+  try {
+    for (let i = 0; i < state.slides.length; i++) {
+      state.activeSlide = i;
+      Object.assign(state, state.slides[i]);
+      syncControls();
+      render();
+      const canvas = await makeCanvas();
+      const width = canvas.width * 0.75;
+      const height = canvas.height * 0.75;
+      const orientation = width >= height ? "landscape" : "portrait";
+      if (!pdf) {
+        pdf = new PdfDocument({ unit: "pt", format: [width, height], orientation, compress: true });
+      } else {
+        pdf.addPage([width, height], orientation);
+      }
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+    pdf.save(`${safeExportName()}-carousel.pdf`);
   } finally {
     state.activeSlide = active;
     Object.assign(state, state.slides[active]);
@@ -1416,6 +2071,7 @@ $("dlJpg").onclick = () => busy($("dlJpg"), "Ban raha hai...", async () => {
 });
 
 $("downloadCarousel").onclick = () => busy($("downloadCarousel"), "Carousel ban raha hai...", exportCarousel);
+$("downloadPdf").onclick = () => busy($("downloadPdf"), "PDF ban rahi hai...", exportCarouselPdf);
 $("exportAllSizes").onclick = () => busy($("exportAllSizes"), "All sizes ban rahe hain...", exportAllSizes);
 
 $("copy").onclick = () => busy($("copy"), "Copy ho raha hai...", async () => {
@@ -1472,6 +2128,13 @@ normalizeSlides();
 syncControls();
 syncDesignFolders();
 syncSavedDesigns();
+try {
+  syncBrandKits();
+} catch (e) {
+  $("saved").textContent = `Brand kits load nahi huay: ${e.message}`;
+}
+applyLanguage();
+filterTemplates();
 try {
   syncBackgroundLibrary();
 } catch (e) {
