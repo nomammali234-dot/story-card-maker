@@ -464,13 +464,14 @@ button.ghost {
 .card-qr {
   position: absolute;
   top: 16px;
-  left: 16px;
+  right: 16px;
   padding: 7px;
   border-radius: 10px;
   background: #fff;
   line-height: 0;
 }
 
+.card.has-qr .head { min-height: 102px; padding-right: 110px; }
 .card-qr canvas, .card-qr img { display: block; }
 .language-switch { display: grid; gap: 3px; margin-left: auto; min-width: 118px; }
 .language-switch label { color: var(--muted); font-size: .72rem; }

@@ -436,6 +436,7 @@ function render() {
     watermark.classList.remove("is-image");
   }
   renderQr();
+  card.classList.toggle("has-qr", !$("cardQr").hidden);
   applyLayerStack();
   renderLayerManager();
 
