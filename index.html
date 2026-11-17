@@ -4,17 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Story Maker</title>
+<meta name="description" content="Design polished story cards and carousel posts with custom fonts, backgrounds, stickers, and export sizes.">
+<meta name="theme-color" content="#0b1020">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lora:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@500;700&family=Poppins:wght@400;600&family=Roboto+Slab:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<header>
-  <h1>Story Maker</h1>
-  <p>Kahani likhein, template chunein, aur card ko PNG bana kar download karein.</p>
+<header class="site-header">
+  <div class="brand-mark" aria-hidden="true">S</div>
+  <div class="brand-copy">
+    <p class="eyebrow">CREATIVE STUDIO</p>
+    <h1>Story Maker</h1>
+    <p>Kahani likhein, template chunein, aur card ko PNG bana kar download karein.</p>
+  </div>
+  <span class="header-status"><span aria-hidden="true"></span> Ready to create</span>
 </header>
 
-<div class="app">
+<main class="app">
   <section class="panel" aria-label="Card ki setting">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">YOUR WORKSPACE</p>
+        <h2>Design your story</h2>
+      </div>
+      <span class="panel-hint">Changes save automatically</span>
+    </div>
     <div class="tabs" role="tablist" aria-label="Setting ke hisse">
       <button role="tab" id="t-profile" aria-controls="p-profile" aria-selected="true">Profile</button>
       <button role="tab" id="t-text" aria-controls="p-text" aria-selected="false" tabindex="-1">Text</button>
@@ -229,6 +243,13 @@
   </section>
 
   <section class="stage" aria-label="Preview">
+    <div class="stage-heading">
+      <div>
+        <p class="eyebrow">PREVIEW</p>
+        <h2>Live canvas</h2>
+      </div>
+      <span class="live-status"><span aria-hidden="true"></span> Live</span>
+    </div>
     <div class="card" id="card">
       <div class="card-background" id="cardBackground" aria-hidden="true" hidden></div>
       <div class="watermark" id="cardWatermark" aria-hidden="true"></div>
@@ -246,7 +267,7 @@
     <button type="button" class="ghost" id="exportAllSizes">Export all sizes ZIP</button>
     <p class="status"><span id="saved"></span> <span class="warn" id="warn" hidden>Matan card se bahar ja raha hai. Size chhota karein ya card ka size badlein.</span></p>
   </section>
-</div>
+</main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>

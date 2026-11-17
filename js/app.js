@@ -1164,7 +1164,23 @@ $("deleteDesign").onclick = () => {
 
 async function makeCanvas() {
   await document.fonts.ready;
-  return html2canvas($("card"), { scale: state.exportW / $("card").offsetWidth, backgroundColor: null, useCORS: true });
+  const canvas = await html2canvas($("card"), {
+    scale: state.exportW / $("card").offsetWidth,
+    backgroundColor: null,
+    useCORS: true
+  });
+  if (canvas.width === Number(state.exportW)) return canvas;
+
+  const normalized = document.createElement("canvas");
+  normalized.width = Number(state.exportW);
+  normalized.height = Math.round(canvas.height * normalized.width / canvas.width);
+  const context = normalized.getContext("2d");
+  if (!context) throw new Error("Export image resize nahi ho saki.");
+  context.imageSmoothingQuality = "high";
+  context.drawImage(canvas, 0, 0, normalized.width, normalized.height);
+  canvas.width = 0;
+  canvas.height = 0;
+  return normalized;
 }
 
 async function exportImage(type) {
